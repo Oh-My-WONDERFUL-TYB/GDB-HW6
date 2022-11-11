@@ -1,0 +1,37 @@
+[
+{
+  "directory": "/home/jwimd/Study/Geospatial_Database/Homework/hw6/GDB-HW6/build",
+  "command": "/usr/bin/g++   -I/home/jwimd/Study/Geospatial_Database/Homework/hw6/GDB-HW6/src/./include  -g   -o CMakeFiles/hw6.dir/Geometry.cpp.o -c /home/jwimd/Study/Geospatial_Database/Homework/hw6/GDB-HW6/src/Geometry.cpp",
+  "file": "/home/jwimd/Study/Geospatial_Database/Homework/hw6/GDB-HW6/src/Geometry.cpp"
+},
+{
+  "directory": "/home/jwimd/Study/Geospatial_Database/Homework/hw6/GDB-HW6/build",
+  "command": "/usr/bin/g++   -I/home/jwimd/Study/Geospatial_Database/Homework/hw6/GDB-HW6/src/./include  -g   -o CMakeFiles/hw6.dir/QuadTree.cpp.o -c /home/jwimd/Study/Geospatial_Database/Homework/hw6/GDB-HW6/src/QuadTree.cpp",
+  "file": "/home/jwimd/Study/Geospatial_Database/Homework/hw6/GDB-HW6/src/QuadTree.cpp"
+},
+{
+  "directory": "/home/jwimd/Study/Geospatial_Database/Homework/hw6/GDB-HW6/build",
+  "command": "/usr/bin/g++   -I/home/jwimd/Study/Geospatial_Database/Homework/hw6/GDB-HW6/src/./include  -g   -o CMakeFiles/hw6.dir/hw6.cpp.o -c /home/jwimd/Study/Geospatial_Database/Homework/hw6/GDB-HW6/src/hw6.cpp",
+  "file": "/home/jwimd/Study/Geospatial_Database/Homework/hw6/GDB-HW6/src/hw6.cpp"
+},
+{
+  "directory": "/home/jwimd/Study/Geospatial_Database/Homework/hw6/GDB-HW6/build",
+  "command": "/usr/bin/g++   -I/home/jwimd/Study/Geospatial_Database/Homework/hw6/GDB-HW6/src/./include  -g   -o CMakeFiles/hw6.dir/test.cpp.o -c /home/jwimd/Study/Geospatial_Database/Homework/hw6/GDB-HW6/src/test.cpp",
+  "file": "/home/jwimd/Study/Geospatial_Database/Homework/hw6/GDB-HW6/src/test.cpp"
+},
+{
+  "directory": "/home/jwimd/Study/Geospatial_Database/Homework/hw6/GDB-HW6/build/shapelib",
+  "command": "/usr/bin/g++    -g   -o CMakeFiles/shape.dir/dbfopen.cpp.o -c /home/jwimd/Study/Geospatial_Database/Homework/hw6/GDB-HW6/src/shapelib/dbfopen.cpp",
+  "file": "/home/jwimd/Study/Geospatial_Database/Homework/hw6/GDB-HW6/src/shapelib/dbfopen.cpp"
+},
+{
+  "directory": "/home/jwimd/Study/Geospatial_Database/Homework/hw6/GDB-HW6/build/shapelib",
+  "command": "/usr/bin/g++    -g   -o CMakeFiles/shape.dir/safileio.cpp.o -c /home/jwimd/Study/Geospatial_Database/Homework/hw6/GDB-HW6/src/shapelib/safileio.cpp",
+  "file": "/home/jwimd/Study/Geospatial_Database/Homework/hw6/GDB-HW6/src/shapelib/safileio.cpp"
+},
+{
+  "directory": "/home/jwimd/Study/Geospatial_Database/Homework/hw6/GDB-HW6/build/shapelib",
+  "command": "/usr/bin/g++    -g   -o CMakeFiles/shape.dir/shpopen.cpp.o -c /home/jwimd/Study/Geospatial_Database/Homework/hw6/GDB-HW6/src/shapelib/shpopen.cpp",
+  "file": "/home/jwimd/Study/Geospatial_Database/Homework/hw6/GDB-HW6/src/shapelib/shpopen.cpp"
+}
+]
