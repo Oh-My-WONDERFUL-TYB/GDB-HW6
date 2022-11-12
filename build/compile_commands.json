@@ -11,6 +11,11 @@
 },
 {
   "directory": "/home/jwimd/Study/Geospatial_Database/Homework/hw6/GDB-HW6/build",
+  "command": "/usr/bin/g++   -I/home/jwimd/Study/Geospatial_Database/Homework/hw6/GDB-HW6/src/./include  -g   -o CMakeFiles/hw6.dir/QuadTreeTest.cpp.o -c /home/jwimd/Study/Geospatial_Database/Homework/hw6/GDB-HW6/src/QuadTreeTest.cpp",
+  "file": "/home/jwimd/Study/Geospatial_Database/Homework/hw6/GDB-HW6/src/QuadTreeTest.cpp"
+},
+{
+  "directory": "/home/jwimd/Study/Geospatial_Database/Homework/hw6/GDB-HW6/build",
   "command": "/usr/bin/g++   -I/home/jwimd/Study/Geospatial_Database/Homework/hw6/GDB-HW6/src/./include  -g   -o CMakeFiles/hw6.dir/hw6.cpp.o -c /home/jwimd/Study/Geospatial_Database/Homework/hw6/GDB-HW6/src/hw6.cpp",
   "file": "/home/jwimd/Study/Geospatial_Database/Homework/hw6/GDB-HW6/src/hw6.cpp"
 },

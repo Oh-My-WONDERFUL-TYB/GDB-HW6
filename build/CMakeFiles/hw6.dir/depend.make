@@ -7,15 +7,25 @@ CMakeFiles/hw6.dir/Geometry.cpp.o: /home/jwimd/Study/Geospatial_Database/Homewor
 CMakeFiles/hw6.dir/QuadTree.cpp.o: /home/jwimd/Study/Geospatial_Database/Homework/hw6/GDB-HW6/src/QuadTree.cpp
 CMakeFiles/hw6.dir/QuadTree.cpp.o: /home/jwimd/Study/Geospatial_Database/Homework/hw6/GDB-HW6/src/include/Geometry.h
 CMakeFiles/hw6.dir/QuadTree.cpp.o: /home/jwimd/Study/Geospatial_Database/Homework/hw6/GDB-HW6/src/include/QuadTree.h
+CMakeFiles/hw6.dir/QuadTree.cpp.o: /home/jwimd/Study/Geospatial_Database/Homework/hw6/GDB-HW6/src/include/Tree.h
+
+CMakeFiles/hw6.dir/QuadTreeTest.cpp.o: /home/jwimd/Study/Geospatial_Database/Homework/hw6/GDB-HW6/src/QuadTreeTest.cpp
+CMakeFiles/hw6.dir/QuadTreeTest.cpp.o: /home/jwimd/Study/Geospatial_Database/Homework/hw6/GDB-HW6/src/include/Common.h
+CMakeFiles/hw6.dir/QuadTreeTest.cpp.o: /home/jwimd/Study/Geospatial_Database/Homework/hw6/GDB-HW6/src/include/Geometry.h
+CMakeFiles/hw6.dir/QuadTreeTest.cpp.o: /home/jwimd/Study/Geospatial_Database/Homework/hw6/GDB-HW6/src/include/QuadTree.h
+CMakeFiles/hw6.dir/QuadTreeTest.cpp.o: /home/jwimd/Study/Geospatial_Database/Homework/hw6/GDB-HW6/src/include/Tree.h
 
 CMakeFiles/hw6.dir/hw6.cpp.o: /home/jwimd/Study/Geospatial_Database/Homework/hw6/GDB-HW6/src/hw6.cpp
 CMakeFiles/hw6.dir/hw6.cpp.o: /home/jwimd/Study/Geospatial_Database/Homework/hw6/GDB-HW6/src/include/Common.h
 CMakeFiles/hw6.dir/hw6.cpp.o: /home/jwimd/Study/Geospatial_Database/Homework/hw6/GDB-HW6/src/include/Geometry.h
 CMakeFiles/hw6.dir/hw6.cpp.o: /home/jwimd/Study/Geospatial_Database/Homework/hw6/GDB-HW6/src/include/QuadTree.h
+CMakeFiles/hw6.dir/hw6.cpp.o: /home/jwimd/Study/Geospatial_Database/Homework/hw6/GDB-HW6/src/include/RTree.h
+CMakeFiles/hw6.dir/hw6.cpp.o: /home/jwimd/Study/Geospatial_Database/Homework/hw6/GDB-HW6/src/include/RTreeSrc.h
+CMakeFiles/hw6.dir/hw6.cpp.o: /home/jwimd/Study/Geospatial_Database/Homework/hw6/GDB-HW6/src/include/RTreeTest.h
+CMakeFiles/hw6.dir/hw6.cpp.o: /home/jwimd/Study/Geospatial_Database/Homework/hw6/GDB-HW6/src/include/Tree.h
 CMakeFiles/hw6.dir/hw6.cpp.o: /home/jwimd/Study/Geospatial_Database/Homework/hw6/GDB-HW6/src/shapelib/shapefil.h
 
 CMakeFiles/hw6.dir/test.cpp.o: /home/jwimd/Study/Geospatial_Database/Homework/hw6/GDB-HW6/src/include/Common.h
 CMakeFiles/hw6.dir/test.cpp.o: /home/jwimd/Study/Geospatial_Database/Homework/hw6/GDB-HW6/src/include/Geometry.h
-CMakeFiles/hw6.dir/test.cpp.o: /home/jwimd/Study/Geospatial_Database/Homework/hw6/GDB-HW6/src/include/QuadTree.h
 CMakeFiles/hw6.dir/test.cpp.o: /home/jwimd/Study/Geospatial_Database/Homework/hw6/GDB-HW6/src/test.cpp
 

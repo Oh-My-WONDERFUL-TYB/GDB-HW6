@@ -94,12 +94,12 @@ shapelib/clean: shapelib/CMakeFiles/shape.dir/clean
 CMakeFiles/hw6.dir/all: shapelib/CMakeFiles/shape.dir/all
 	$(MAKE) -f CMakeFiles/hw6.dir/build.make CMakeFiles/hw6.dir/depend
 	$(MAKE) -f CMakeFiles/hw6.dir/build.make CMakeFiles/hw6.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/jwimd/Study/Geospatial_Database/Homework/hw6/GDB-HW6/build/CMakeFiles --progress-num=1,2,3,4,5 "Built target hw6"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/jwimd/Study/Geospatial_Database/Homework/hw6/GDB-HW6/build/CMakeFiles --progress-num=1,2,3,4,5,6 "Built target hw6"
 .PHONY : CMakeFiles/hw6.dir/all
 
 # Build rule for subdir invocation for target.
 CMakeFiles/hw6.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/jwimd/Study/Geospatial_Database/Homework/hw6/GDB-HW6/build/CMakeFiles 9
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/jwimd/Study/Geospatial_Database/Homework/hw6/GDB-HW6/build/CMakeFiles 10
 	$(MAKE) -f CMakeFiles/Makefile2 CMakeFiles/hw6.dir/all
 	$(CMAKE_COMMAND) -E cmake_progress_start /home/jwimd/Study/Geospatial_Database/Homework/hw6/GDB-HW6/build/CMakeFiles 0
 .PHONY : CMakeFiles/hw6.dir/rule
@@ -121,7 +121,7 @@ CMakeFiles/hw6.dir/clean:
 shapelib/CMakeFiles/shape.dir/all:
 	$(MAKE) -f shapelib/CMakeFiles/shape.dir/build.make shapelib/CMakeFiles/shape.dir/depend
 	$(MAKE) -f shapelib/CMakeFiles/shape.dir/build.make shapelib/CMakeFiles/shape.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/jwimd/Study/Geospatial_Database/Homework/hw6/GDB-HW6/build/CMakeFiles --progress-num=6,7,8,9 "Built target shape"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/jwimd/Study/Geospatial_Database/Homework/hw6/GDB-HW6/build/CMakeFiles --progress-num=7,8,9,10 "Built target shape"
 .PHONY : shapelib/CMakeFiles/shape.dir/all
 
 # Build rule for subdir invocation for target.

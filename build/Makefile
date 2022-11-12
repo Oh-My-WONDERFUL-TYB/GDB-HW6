@@ -190,6 +190,33 @@ QuadTree.cpp.s:
 	$(MAKE) -f CMakeFiles/hw6.dir/build.make CMakeFiles/hw6.dir/QuadTree.cpp.s
 .PHONY : QuadTree.cpp.s
 
+QuadTreeTest.o: QuadTreeTest.cpp.o
+
+.PHONY : QuadTreeTest.o
+
+# target to build an object file
+QuadTreeTest.cpp.o:
+	$(MAKE) -f CMakeFiles/hw6.dir/build.make CMakeFiles/hw6.dir/QuadTreeTest.cpp.o
+.PHONY : QuadTreeTest.cpp.o
+
+QuadTreeTest.i: QuadTreeTest.cpp.i
+
+.PHONY : QuadTreeTest.i
+
+# target to preprocess a source file
+QuadTreeTest.cpp.i:
+	$(MAKE) -f CMakeFiles/hw6.dir/build.make CMakeFiles/hw6.dir/QuadTreeTest.cpp.i
+.PHONY : QuadTreeTest.cpp.i
+
+QuadTreeTest.s: QuadTreeTest.cpp.s
+
+.PHONY : QuadTreeTest.s
+
+# target to generate assembly for a file
+QuadTreeTest.cpp.s:
+	$(MAKE) -f CMakeFiles/hw6.dir/build.make CMakeFiles/hw6.dir/QuadTreeTest.cpp.s
+.PHONY : QuadTreeTest.cpp.s
+
 hw6.o: hw6.cpp.o
 
 .PHONY : hw6.o
@@ -260,6 +287,9 @@ help:
 	@echo "... QuadTree.o"
 	@echo "... QuadTree.i"
 	@echo "... QuadTree.s"
+	@echo "... QuadTreeTest.o"
+	@echo "... QuadTreeTest.i"
+	@echo "... QuadTreeTest.s"
 	@echo "... hw6.o"
 	@echo "... hw6.i"
 	@echo "... hw6.s"
