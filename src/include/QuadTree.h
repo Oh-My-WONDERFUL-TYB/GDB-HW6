@@ -1,145 +1,100 @@
 #ifndef QUADTREE_H_INCLUDED
 #define QUADTREE_H_INCLUDED
 
-#include <string>
-#include <cmath>
-
 #include "Geometry.h"
+#include "Tree.h"
+#include <string>
 
 namespace hw6 {
 
-class Feature {
-private:
-	string name;
-	Geometry* geom;
-
-public:
-	Feature() : geom(NULL) {}
-	Feature(string name, Geometry* geom) : name(name), geom(geom) {}
-
-	const string&   getName()     { return name; }
-	
-	const Geometry* getGeom()     { return geom; }
-
-	const Envelope& getEnvelope() const { return geom->getEnvelope(); }
-
-	double maxDistance2Envelope(double x, double y) const {
-		const Envelope& e = geom->getEnvelope();
-		double x1 = e.getMinX();
-		double y1 = e.getMinY();
-		double x2 = e.getMaxX();
-		double y2 = e.getMaxY();
-
-		double d1 = sqrt((x - x1) * (x - x1) + (y - y1) * (y - y1));
-		double d2 = sqrt((x - x1) * (x - x1) + (y - y2) * (y - y2));
-		double d3 = sqrt((x - x2) * (x - x2) + (y - y1) * (y - y1));
-		double d4 = sqrt((x - x2) * (x - x2) + (y - y2) * (y - y2));
-
-		return max(max(d1, d2), max(d3, d4));
-	}
-
-	double distance(double x, double y) const { 
-		Point point(x, y);
-		return geom->distance(&point);
-	}
-
-	void print() const {
-		cout << "Feature: " << name << " ";
-		geom->print();
-	}
-
-	void draw() const {
-		if (geom)
-			geom->draw();
-	}
-};
-
-
 class QuadNode {
-private:
-	Envelope bbox;
-	QuadNode* nodes[4];
-	vector<Feature> features;
+  private:
+    Envelope bbox;
+    QuadNode *children[4];
+    std::vector<Feature> features;
 
-	QuadNode() {}
+  public:
+    QuadNode() = delete;
+    QuadNode(const Envelope &box) : bbox(box) {
+        children[0] = children[1] = children[2] = children[3] = nullptr;
+    }
 
-public:
-	QuadNode(Envelope& box) {
-		bbox = box;
-		nodes[0] = nodes[1] = nodes[2] = nodes[3] = NULL;
-	}
+    ~QuadNode() {
+        for (int i = 0; i < 4; ++i) {
+            delete children[i];
+            children[i] = nullptr;
+        }
+    }
 
-	~QuadNode() {
-		for (int i = 0; i < 4; ++i) {
-			delete nodes[i];
-			nodes[i] = NULL;
-		}
-	}
+    bool isLeafNode() { return children[0] == nullptr; }
 
-	bool isLeafNode()                  { return nodes[0] == NULL; }
+    const Envelope &getEnvelope() { return bbox; }
 
-	const Envelope& getEnvelope()      { return bbox; }
+    QuadNode *getChildNode(size_t i) { return i < 4 ? children[i] : nullptr; }
 
-	QuadNode* getChildNode(size_t i)   { return i < 4 ? nodes[i] : NULL; }
+    size_t getFeatureNum() const { return features.size(); }
 
-	size_t    getFeatureNum()          { return features.size(); }
+    const Feature &getFeature(size_t i) const { return features[i]; }
 
-	Feature&  getFeature(size_t i)     { return features[i]; }
+    void add(const Feature &f) { features.push_back(f); }
 
-	void add(Feature& f)               { features.push_back(f); }
+    void add(const std::vector<Feature> &fs) {
+        features.insert(features.begin(), fs.begin(), fs.end());
+    }
 
-	void add(vector<Feature>& fs)      { features.insert(features.begin(), fs.begin(), fs.end()); }
+    void countNode(int &interiorNum, int &leafNum);
 
-	void countNode(int& interiorNum, int& leafNum);
+    int countHeight(int height);
 
-	int countHeight(int height);
+    void draw();
 
-	void draw();
+    // split the node into four child nodes, assign each feature to its
+    // overlaped child node(s), clear feature vector, and split child node(s) if
+    // its number of features is larger than capacity
+    void split(size_t capacity);
 
-	// split the node into four child nodes, assign each feature to its overlaped child node(s),
-	// clear feature vector, and split child node(s) if its number of features is larger than capacity 
-	void split(size_t capacity);
+    void rangeQuery(const Envelope &rect, std::vector<Feature> &features);
 
-	void rangeQuery(Envelope& rect, vector<Feature>& features);
-
-	QuadNode* pointInLeafNode(double x, double y);
+    QuadNode *pointInLeafNode(double x, double y);
 };
 
+class QuadTree : public Tree {
+  private:
+    QuadNode *root;
 
-class QuadTree {
-private:
-	QuadNode* root;
-	size_t capacity;
-	Envelope bbox;
+  public:
+    QuadTree() : Tree(5), root(nullptr) {}
+    QuadTree(size_t cap) : Tree(cap), root(nullptr) {}
+    ~QuadTree() {
+        if (root != nullptr)
+            delete root;
+        root = nullptr;
+    }
 
-public:
-	QuadTree() : root(NULL), capacity(5) {}
-	QuadTree(size_t cap) : root(NULL), capacity(cap) {}
-	~QuadTree() {
-		delete root;
-		root = NULL;
-	}
+    virtual bool constructTree(const std::vector<Feature> &features) override;
 
-	void setCapacity(int capacity) { this->capacity = capacity; }
-	int  getCapacity() const { return capacity; }
+    virtual void countNode(int &interiorNum, int &leafNum) override;
 
-	const Envelope& getEnvelope() const { return bbox; }
+    virtual void countHeight(int &height) override;
 
-	bool constructQuadTree(vector<Feature>& features);
+    virtual void rangeQuery(const Envelope &rect,
+                            std::vector<Feature> &features) override;
 
-	void countQuadNode(int& interiorNum, int& leafNum);
+    virtual bool NNQuery(double x, double y,
+                         std::vector<Feature> &features) override;
 
-	void countHeight(int &height);
+    QuadNode *pointInLeafNode(double x, double y) {
+        return root->pointInLeafNode(x, y);
+    }
 
-	void rangeQuery(Envelope& rect, vector<Feature>& features);
+    virtual void draw() override;
 
-	bool NNQuery(double x, double y, vector<Feature>& features);
+  public:
+    static void test(int t);
 
-	QuadNode* pointInLeafNode(double x, double y) { return root->pointInLeafNode(x, y); }
-
-	void draw();
+    static void analyse();
 };
 
-}
+} // namespace hw6
 
 #endif

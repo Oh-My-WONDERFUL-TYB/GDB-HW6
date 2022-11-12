@@ -2,7 +2,11 @@
 #include "Geometry.h"
 #include "time.h"
 
+#include <cmath>
+
 using namespace hw6;
+
+using namespace std;
 
 extern int mode;
 extern vector<Geometry *> readGeom(const char *filename);
@@ -10,13 +14,12 @@ extern vector<string> readName(const char *filename);
 
 void transformValue(double &res, const char *format = "%.2lf")
 {
-
 	char buf[20];
 	sprintf(buf, format, res);
 	sscanf(buf, "%lf", &res);
 }
 
-void wrongMessage(Envelope e1, Envelope e2, bool cal)
+void wrongMessage(hw6::Envelope e1, hw6::Envelope e2, bool cal)
 {
 	cout << "Your answer is " << cal << " for test between ";
 	e1.print();
@@ -25,7 +28,8 @@ void wrongMessage(Envelope e1, Envelope e2, bool cal)
 	cout << ", but the answer is " << !cal << endl;
 }
 
-void wrongMessage(const Point &pt1, const Point &pt2, double dis, double res)
+void wrongMessage(const hw6::Point &pt1, const hw6::Point &pt2, double dis,
+				  double res)
 {
 	cout << "Your answer is " << dis << " for test ";
 	pt1.print();
@@ -34,7 +38,8 @@ void wrongMessage(const Point &pt1, const Point &pt2, double dis, double res)
 	cout << ", but the answer is " << res << endl;
 }
 
-void wrongMessage(Envelope e1, Envelope e2, Envelope cal, Envelope res)
+void wrongMessage(hw6::Envelope e1, hw6::Envelope e2, hw6::Envelope cal,
+				  hw6::Envelope res)
 {
 	cout << "Your answer is ";
 	cal.print();
@@ -45,56 +50,6 @@ void wrongMessage(Envelope e1, Envelope e2, Envelope cal, Envelope res)
 	cout << ", but the answer is ";
 	res.print();
 	cout << endl;
-}
-
-void QuadTreeAnalysis()
-{
-	vector<Feature> features;
-	vector<Geometry *> geom = readGeom(".//data/taxi");
-	vector<string> name = readName(".//data/taxi");
-
-	features.clear();
-	features.reserve(geom.size());
-	for (size_t i = 0; i < geom.size(); ++i)
-		features.push_back(Feature(name[i], geom[i]));
-
-	cout << "taxi number: " << geom.size() << endl;
-
-	srand(time(NULL));
-	for (int cap = 70; cap <= 200; cap += 10)
-	{
-		QuadTree *qtree = new QuadTree();
-		// Task ??????????????????????????????
-		// Write your code here
-
-		clock_t start_time = clock();
-		// Write your code here
-		clock_t end_time = clock();
-
-		int height = 0, interiorNum = 0, leafNum = 0;
-		// Write your code here
-
-		cout << "Capacity " << cap << "\n";
-		cout << "Height: " << height << " \tInterior node number: " << interiorNum << " \tLeaf node number: " << leafNum << "\n";
-		cout << "Construction time: " << (end_time - start_time) / 1000.0 << "s" << endl;
-
-		double x, y;
-		vector<hw6::Feature> candidateFeatures;
-		start_time = clock();
-		for (int i = 0; i < 100000; ++i)
-		{
-			x = -((rand() % 225) / 10000.0 + 73.9812);
-			y = (rand() % 239) / 10000.0 + 40.7247;
-			qtree->NNQuery(x, y, candidateFeatures);
-			// refine step
-			// write your code here
-		}
-		end_time = clock();
-		cout << "NNQuery time: " << (end_time - start_time) / 1000.0 << "s" << endl
-			 << endl;
-
-		delete qtree;
-	}
 }
 
 void test(int t)
@@ -261,66 +216,91 @@ void test(int t)
 	else if (t == TEST4)
 	{
 		cout << "????4: QuadTree Construction" << endl;
-		int ncase, cct;
-		ncase = cct = 2;
-		QuadTree qtree;
-		vector<Geometry *> geom = readGeom(".//data/polygon");
-		vector<Feature> features;
+		// int ncase, cct;
+		// ncase = cct = 2;
+		// QuadTree qtree;
+		// vector<Geometry *> geom = readGeom(".//data/polygon");
+		// vector<Feature> features;
 
-		for (size_t i = 0; i < geom.size(); ++i)
-			features.push_back(Feature("", geom[i]));
+		// for (size_t i = 0; i < geom.size(); ++i)
+		// 	features.push_back(Feature("", geom[i]));
 
-		qtree.setCapacity(1);
-		qtree.constructQuadTree(features);
+		// qtree.setCapacity(1);
+		// qtree.constructQuadTree(features);
 
-		int height, interiorNum, leafNum;
-		qtree.countHeight(height);
-		qtree.countQuadNode(interiorNum, leafNum);
+		// int height, interiorNum, leafNum;
+		// qtree.countHeight(height);
+		// qtree.countQuadNode(interiorNum, leafNum);
 
-		if (!(height == 6 && interiorNum == 8 && leafNum == 25))
-		{
-			cout << "Case 1: "
-				 << "Your answer is height: " << height << ", interiorNum: " << interiorNum << ", leafNum: " << leafNum << " for case1, but the answer is height: 6, interiorNum: 8, leafNum: 25\n";
-			--cct;
-		}
+		// if (!(height == 6 && interiorNum == 8 && leafNum == 25))
+		// {
+		// 	cout << "Case 1: "
+		// 		 << "Your answer is height: " << height << ", interiorNum: " << interiorNum << ", leafNum: " << leafNum << " for case1, but the answer is height: 6, interiorNum: 8, leafNum: 25\n";
+		// 	--cct;
+		// }
 
-		features.clear();
-		for (size_t i = 0; i < geom.size(); ++i)
-			delete geom[i];
-		geom.clear();
+		// features.clear();
+		// for (size_t i = 0; i < geom.size(); ++i)
+		// 	delete geom[i];
+		// geom.clear();
 
-		vector<Geometry *> geom2 = readGeom(".//data/highway");
-		vector<Feature> features2;
-		QuadTree qtree2;
+		// vector<Geometry *> geom2 = readGeom(".//data/highway");
+		// vector<Feature> features2;
+		// QuadTree qtree2;
 
-		for (size_t i = 0; i < geom2.size(); ++i)
-			features2.push_back(Feature("", geom2[i]));
+		// for (size_t i = 0; i < geom2.size(); ++i)
+		// 	features2.push_back(Feature("", geom2[i]));
 
-		qtree2.setCapacity(20);
-		qtree2.constructQuadTree(features2);
+		// qtree2.setCapacity(20);
+		// qtree2.constructQuadTree(features2);
 
-		int height2, interiorNum2, leafNum2;
-		qtree2.countHeight(height2);
-		qtree2.countQuadNode(interiorNum2, leafNum2);
+		// int height2, interiorNum2, leafNum2;
+		// qtree2.countHeight(height2);
+		// qtree2.countQuadNode(interiorNum2, leafNum2);
 
-		if (!(height2 == 11 && interiorNum2 == 1386 && leafNum2 == 4159))
-		{
-			cout << "Case 2: "
-				 << "Your answer is height: " << height2 << ", interiorNum: " << interiorNum2 << ", leafNum: " << leafNum2 << " for case2, but the answer is height: 11, interiorNum: 1386, leafNum: 4159\n";
-			--cct;
-		}
+		// if (!(height2 == 11 && interiorNum2 == 1386 && leafNum2 == 4159))
+		// {
+		// 	cout << "Case 2: "
+		// 		 << "Your answer is height: " << height2 << ", interiorNum: " << interiorNum2 << ", leafNum: " << leafNum2 << " for case2, but the answer is height: 11, interiorNum: 1386, leafNum: 4159\n";
+		// 	--cct;
+		// }
 
-		features2.clear();
-		for (size_t i = 0; i < geom2.size(); ++i)
-			delete geom2[i];
-		geom2.clear();
+		// features2.clear();
+		// for (size_t i = 0; i < geom2.size(); ++i)
+		// 	delete geom2[i];
+		// geom2.clear();
 
-		cout << "QuadTree Construction: " << cct << " / " << ncase << " tests are passed" << endl;
+		// cout << "QuadTree Construction: " << cct << " / " << ncase << " tests are passed" << endl;
 	}
-	else if (t == TEST8)
+
+	//内环多边形测试
+	else if (t == TEST5)
 	{
-		cout << "????8: QuadTreeAnalysis" << endl;
-		QuadTreeAnalysis();
+		cout << "????5: Inner Rings Constrution of Polygon" << endl;
+
+		vector<Point> points;
+		points.push_back(Point(5, 0));
+		points.push_back(Point(3, 6));
+		points.push_back(Point(2, 4));
+		points.push_back(Point(-2, 4));
+		points.push_back(Point(-3, 5));
+		points.push_back(Point(-5, 0));
+		points.push_back(Point(0, -3));
+		points.push_back(Point(5, 0));
+		LineString line(points);
+		Polygon poly(line);
+
+		points.clear();
+		points.push_back(Point(5, 4));
+		points.push_back(Point(3, 4));
+		points.push_back(Point(0, 4));
+		points.push_back(Point(-3, 4));
+		points.push_back(Point(-5, 4));
+		points.push_back(Point(5, 5));
+		points.push_back(Point(3, 5));
+		points.push_back(Point(0, 5));
+		points.push_back(Point(-3, 5));
+		points.push_back(Point(0, 0));
 	}
 
 	cout << "**********************End**********************" << endl;

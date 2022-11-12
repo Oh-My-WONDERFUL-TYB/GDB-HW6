@@ -1,30 +1,38 @@
 /***
- * @Description:¶¨Òå¿ØÖÆÌ¨Ó¦ÓÃ³ÌÐòµÄÈë¿Úµã
+ * @Description:¿Ø¼þ´úÂë
  * @Author: jwimd chenjiewei@zju.edu.cn
  * @Date: 2022-11-11 17:50:56
  * @LastEditors: jwimd chenjiewei@zju.edu.cn
  * @LastEditTime: 2022-11-11 18:38:26
  * @FilePath: /GDB-HW6/src/hw6.cpp
  */
-// hw6.cpp : ¶¨Òå¿ØÖÆÌ¨Ó¦ÓÃ³ÌÐòµÄÈë¿Úµã¡£
+
+// hw6.cpp : ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ì¨Ó¦ï¿½Ã³ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Úµã¡?
 //
 
 #include "Common.h"
 #include "Geometry.h"
 #include "shapelib/shapefil.h"
 
-#include <GL/freeglut.h> // Glut¿âÍ·ÎÄ¼þ
+#include <GL/freeglut.h> // GLUTï¿½ï¿½Í·ï¿½Ä¼ï¿½
 
-#include <iostream>
-#include <vector>
 #include <cstdio>
 #include <ctime>
-#include <map>
+#include <iostream>
 #include <list>
-using namespace std;
+#include <map>
+#include <memory>
+#include <vector>
 
-extern void test(int t);
-extern void QuadTreeAnalysis();
+#ifdef USE_RTREE
+#include "RTree.h"
+using TreeTy = hw6::RTree<8>;
+#else
+#include "QuadTree.h"
+using TreeTy = hw6::QuadTree;
+#endif
+
+using namespace std;
 
 int screenWidth = 640;
 int screenHeight = 480;
@@ -33,13 +41,15 @@ double pointSize = 2.0;
 
 int mode;
 
+extern void test(int t);
+
 vector<hw6::Feature> features;
 vector<hw6::Feature> roads;
 bool showRoad = true;
 
-hw6::QuadTree pointQTree;
-hw6::QuadTree roadQTree;
-bool showQuadTree = false;
+unique_ptr<hw6::Tree> pointTree;
+unique_ptr<hw6::Tree> roadTree;
+bool showTree = false;
 
 hw6::Feature nearestFeature;
 
@@ -49,468 +59,431 @@ hw6::Envelope selectedRect;
 vector<hw6::Feature> selectedFeatures;
 
 /*
- * shapefileÎÄ¼þÖÐnameºÍgeometryÊôÐÔ¶ÁÈ¡
+ * shapefileï¿½Ä¼ï¿½ï¿½ï¿½nameï¿½ï¿½geometryï¿½ï¿½ï¿½Ô¶ï¿½È¡
  */
-vector<string> readName(const char *filename)
-{
-	DBFHandle file = DBFOpen(filename, "r");
+vector<string> readName(const char *filename) {
+    DBFHandle file = DBFOpen(filename, "r");
 
-	vector<string> res;
-	int cct = DBFGetRecordCount(file);
-	res.reserve(cct);
-	for (int i = 0; i < cct; ++i)
-	{
-		string a = DBFReadStringAttribute(file, i, 0);
-		res.push_back(a);
-	}
+    vector<string> res;
+    int cct = DBFGetRecordCount(file);
+    res.reserve(cct);
+    for (int i = 0; i < cct; ++i) {
+        string a = DBFReadStringAttribute(file, i, 0);
+        res.push_back(a);
+    }
 
-	DBFClose(file);
+    DBFClose(file);
 
-	return res;
+    return res;
 }
 
-vector<hw6::Geometry *> readGeom(const char *filename)
-{
-	SHPHandle file = SHPOpen(filename, "r");
+vector<hw6::Geometry *> readGeom(const char *filename) {
+    SHPHandle file = SHPOpen(filename, "r");
 
-	int pnEntities, pnShapeType;
-	double padfMinBound[4], padfMaxBound[4];
-	SHPGetInfo(file, &pnEntities, &pnShapeType, padfMinBound, padfMaxBound);
+    int pnEntities, pnShapeType;
+    double padfMinBound[4], padfMaxBound[4];
+    SHPGetInfo(file, &pnEntities, &pnShapeType, padfMinBound, padfMaxBound);
 
-	vector<hw6::Point> points;
-	vector<hw6::Geometry *> geoms;
-	geoms.reserve(pnEntities);
-	switch (pnShapeType)
-	{
-	case SHPT_POINT:
-		for (int i = 0; i < pnEntities; ++i)
-		{
-			SHPObject *pt = SHPReadObject(file, i);
-			geoms.push_back(new hw6::Point(pt->padfY[0], pt->padfX[0]));
-			SHPDestroyObject(pt);
-		}
-		break;
+    vector<hw6::Point> points;
+    vector<hw6::Geometry *> geoms;
+    geoms.reserve(pnEntities);
+    switch (pnShapeType) {
+    case SHPT_POINT:
+        for (int i = 0; i < pnEntities; ++i) {
+            SHPObject *pt = SHPReadObject(file, i);
+            geoms.push_back(new hw6::Point(pt->padfY[0], pt->padfX[0]));
+            SHPDestroyObject(pt);
+        }
+        break;
 
-	case SHPT_ARC:
-		for (int i = 0; i < pnEntities; ++i)
-		{
-			points.clear();
-			SHPObject *pt = SHPReadObject(file, i);
-			for (int j = 0; j < pt->nVertices; ++j)
-			{
-				points.push_back(hw6::Point(pt->padfY[j], pt->padfX[j]));
-			}
-			SHPDestroyObject(pt);
-			geoms.push_back(new hw6::LineString(points));
-		}
-		break;
+    case SHPT_ARC:
+        for (int i = 0; i < pnEntities; ++i) {
+            points.clear();
+            SHPObject *pt = SHPReadObject(file, i);
+            for (int j = 0; j < pt->nVertices; ++j) {
+                points.push_back(hw6::Point(pt->padfY[j], pt->padfX[j]));
+            }
+            SHPDestroyObject(pt);
+            geoms.push_back(new hw6::LineString(points));
+        }
+        break;
 
-	case SHPT_POLYGON:
-		for (int i = 0; i < pnEntities; ++i)
-		{
-			points.clear();
-			SHPObject *pt = SHPReadObject(file, i);
-			for (int j = 0; j < pt->nVertices; ++j)
-			{
-				points.push_back(hw6::Point(pt->padfY[j], pt->padfX[j]));
-			}
-			SHPDestroyObject(pt);
-			hw6::LineString line(points);
-			hw6::Polygon *poly = new hw6::Polygon(line);
-			geoms.push_back(new hw6::Polygon(line));
-		}
-		break;
-	}
+    case SHPT_POLYGON:
+        for (int i = 0; i < pnEntities; ++i) {
+            points.clear();
+            SHPObject *pt = SHPReadObject(file, i);
+            for (int j = 0; j < pt->nVertices; ++j) {
+                points.push_back(hw6::Point(pt->padfY[j], pt->padfX[j]));
+            }
+            SHPDestroyObject(pt);
+            hw6::LineString line(points);
+            hw6::Polygon *poly = new hw6::Polygon(line);
+            geoms.push_back(new hw6::Polygon(line));
+        }
+        break;
+    }
 
-	SHPClose(file);
-	return geoms;
+    SHPClose(file);
+    return geoms;
 }
 
 /*
- * Êä³ö¼¸ºÎÐÅÏ¢
+ * ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ï?
  */
-void printGeom(vector<hw6::Geometry *> &geom)
-{
-	cout << "Geometry:" << endl;
-	for (vector<hw6::Geometry *>::iterator it = geom.begin(); it != geom.end(); ++it)
-	{
-		(*it)->print();
-	}
+void printGeom(vector<hw6::Geometry *> &geom) {
+    cout << "Geometry:" << endl;
+    for (vector<hw6::Geometry *>::iterator it = geom.begin(); it != geom.end();
+         ++it) {
+        (*it)->print();
+    }
 }
 
 /*
- * É¾³ý¼¸ºÎÐÅÏ¢
+ * É¾ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ï¢
  */
-void deleteGeom(vector<hw6::Geometry *> &geom)
-{
-	for (vector<hw6::Geometry *>::iterator it = geom.begin(); it != geom.end(); ++it)
-	{
-		delete *it;
-		*it = NULL;
-	}
-	geom.clear();
+void deleteGeom(vector<hw6::Geometry *> &geom) {
+    for (vector<hw6::Geometry *>::iterator it = geom.begin(); it != geom.end();
+         ++it) {
+        delete *it;
+        *it = NULL;
+    }
+    geom.clear();
 }
 
 /*
- * ¶ÁÈ¡Å¦Ô¼µÀÂ·Êý¾Ý
+ * ï¿½ï¿½È¡Å¦Ô¼ï¿½ï¿½Â·ï¿½ï¿½ï¿½ï¿½
  */
-void loadRoadData()
-{
-	vector<hw6::Geometry *> geom = readGeom("../data/highway");
+void loadRoadData() {
+    vector<hw6::Geometry *> geom = readGeom("../data/highway");
 
-	roads.clear();
-	for (size_t i = 0; i < geom.size(); ++i)
-		roads.push_back(hw6::Feature(to_string(i), geom[i]));
+    roads.clear();
+    for (size_t i = 0; i < geom.size(); ++i)
+        roads.push_back(hw6::Feature(to_string(i), geom[i]));
 
-	cout << "road number: " << geom.size() << endl;
-	roadQTree.setCapacity(20);
-	roadQTree.constructQuadTree(roads);
+    cout << "road number: " << geom.size() << endl;
+    roadTree->setCapacity(20);
+    roadTree->constructTree(roads);
 }
 
 /*
- * ¶ÁÈ¡Å¦Ô¼×ÔÐÐ³µ×âÁÞµãÊý¾Ý
+ * ï¿½ï¿½È¡Å¦Ô¼ï¿½ï¿½ï¿½Ð³ï¿½ï¿½ï¿½ï¿½Þµï¿½ï¿½ï¿½ï¿½ï¿½
  */
-void loadStationData()
-{
-	vector<hw6::Geometry *> geom = readGeom("../data/station");
-	vector<string> name = readName("../data/station");
+void loadStationData() {
+    vector<hw6::Geometry *> geom = readGeom("../data/station");
+    vector<string> name = readName("../data/station");
 
-	features.clear();
-	for (size_t i = 0; i < geom.size(); ++i)
-		features.push_back(hw6::Feature(name[i], geom[i]));
+    features.clear();
+    for (size_t i = 0; i < geom.size(); ++i)
+        features.push_back(hw6::Feature(name[i], geom[i]));
 
-	cout << "station number: " << geom.size() << endl;
-	pointQTree.setCapacity(5);
-	pointQTree.constructQuadTree(features);
+    cout << "station number: " << geom.size() << endl;
+    pointTree->setCapacity(5);
+    pointTree->constructTree(features);
 }
 
 /*
- * ¶ÁÈ¡Å¦Ô¼³ö×â³µ´ò³µµãÊý¾Ý
+ * ï¿½ï¿½È¡Å¦Ô¼ï¿½ï¿½ï¿½â³µï¿½ò³µµï¿½ï¿½ï¿½ï¿½ï¿½
  */
-void loadTaxiData()
-{
-	vector<hw6::Geometry *> geom = readGeom("../data/taxi");
-	vector<string> name = readName("../data/taxi");
+void loadTaxiData() {
+    vector<hw6::Geometry *> geom = readGeom("../data/taxi");
+    vector<string> name = readName("../data/taxi");
 
-	features.clear();
-	for (size_t i = 0; i < geom.size(); ++i)
-		features.push_back(hw6::Feature(name[i], geom[i]));
+    features.clear();
+    for (size_t i = 0; i < geom.size(); ++i)
+        features.push_back(hw6::Feature(name[i], geom[i]));
 
-	cout << "taxi number: " << geom.size() << endl;
-	pointQTree.setCapacity(100);
-	pointQTree.constructQuadTree(features);
+    cout << "taxi number: " << geom.size() << endl;
+    pointTree->setCapacity(100);
+    pointTree->constructTree(features);
 }
 
 /*
- * ÇøÓò²éÑ¯
+ * ï¿½ï¿½ï¿½ï¿½ï¿½Ñ?
  */
-void rangeQuery()
-{
-	vector<hw6::Feature> candidateFeatures;
+void rangeQuery() {
+    vector<hw6::Feature> candidateFeatures;
 
-	// filter step (Ê¹ÓÃËÄ²æÊ÷»ñµÃ²éÑ¯ÇøÓòºÍ¼¸ºÎÌØÕ÷°üÎ§ºÐÏà½»µÄºòÑ¡¼¯£©
-	if (mode == RANGEPOINT)
-		pointQTree.rangeQuery(selectedRect, candidateFeatures);
-	else if (mode == RANGELINE)
-		roadQTree.rangeQuery(selectedRect, candidateFeatures);
+    // filter step (Ê¹ï¿½ï¿½ï¿½Ä²ï¿½ï¿½ï¿½ï¿½ï¿½Ã²ï¿½Ñ¯ï¿½ï¿½ï¿½ï¿½Í¼ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Î§ï¿½ï¿½ï¿½à½»ï¿½Äºï¿½Ñ¡ï¿½ï¿½ï¿½ï¿½
+    if (mode == RANGEPOINT)
+        pointTree->rangeQuery(selectedRect, candidateFeatures);
+    else if (mode == RANGELINE)
+        roadTree->rangeQuery(selectedRect, candidateFeatures);
 
-	// refine step (¾«È·ÅÐ¶ÏÊ±£¬ÐèÒªÈ¥ÖØ£¬±ÜÃâ²éÑ¯ÇøÓòºÍ¼¸ºÎ¶ÔÏóµÄÖØ¸´¼ÆËã)
-	// write your here to update selectedFeatures
+    // refine step (ï¿½ï¿½È·ï¿½Ð¶ï¿½Ê±ï¿½ï¿½ï¿½ï¿½ÒªÈ¥ï¿½Ø£ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ñ¯ï¿½ï¿½ï¿½ï¿½Í¼ï¿½ï¿½Î¶ï¿½ï¿½ï¿½ï¿½ï¿½Ø¸ï¿½ï¿½ï¿½ï¿½ï¿?)
+    // TODO
 }
 
 /*
- * ÁÚ½ü²éÑ¯
+ * ï¿½Ú½ï¿½ï¿½ï¿½Ñ¯
  */
-void NNQuery(hw6::Point p)
-{
-	vector<hw6::Feature> candidateFeatures;
+void NNQuery(hw6::Point p) {
+    vector<hw6::Feature> candidateFeatures;
 
-	// filter step (Ê¹ÓÃËÄ²æÊ÷»ñµÃ¾àÀë½Ï½üµÄ¼¸ºÎÌØÕ÷ºòÑ¡¼¯)
-	if (mode == NNPOINT)
-		pointQTree.NNQuery(p.getX(), p.getY(), candidateFeatures);
-	else if (mode == NNLINE)
-		roadQTree.NNQuery(p.getX(), p.getY(), candidateFeatures);
+    // filter step (Ê¹ï¿½ï¿½ï¿½Ä²ï¿½ï¿½ï¿½ï¿½ï¿½Ã¾ï¿½ï¿½ï¿½Ï½ï¿½ï¿½Ä¼ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ñ¡ï¿½ï¿½)
+    if (mode == NNPOINT)
+        pointTree->NNQuery(p.getX(), p.getY(), candidateFeatures);
+    else if (mode == NNLINE)
+        roadTree->NNQuery(p.getX(), p.getY(), candidateFeatures);
 
-	// refine step (¾«È·¼ÆËã²éÑ¯µãÓë¼¸ºÎ¶ÔÏóµÄ¾àÀë)
-	// write your here to update nearestFeature
+    // refine step (ï¿½ï¿½È·ï¿½ï¿½ï¿½ï¿½ï¿½Ñ¯ï¿½ï¿½ï¿½ë¼¸ï¿½Î¶ï¿½ï¿½ï¿½Ä¾ï¿½ï¿½ï¿½)
+    // TODO
 }
 
 /*
- * ´ÓÆÁÄ»×ø±ê×ª»»µ½µØÀí×ø±ê
+ * ï¿½ï¿½ï¿½ï¿½Ä»ï¿½ï¿½ï¿½ï¿½×ªï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
  */
-void transfromPt(hw6::Point &pt)
-{
-	const hw6::Envelope bbox = pointQTree.getEnvelope();
-	double width = bbox.getMaxX() - bbox.getMinX() + 0.002;
-	double height = bbox.getMaxY() - bbox.getMinY() + 0.002;
+void transfromPt(hw6::Point &pt) {
+    const hw6::Envelope bbox = pointTree->getEnvelope();
+    double width = bbox.getMaxX() - bbox.getMinX() + 0.002;
+    double height = bbox.getMaxY() - bbox.getMinY() + 0.002;
 
-	double x = pt.getX() * width / screenWidth + bbox.getMinX() - 0.001;
-	double y = pt.getY() * height / screenHeight + bbox.getMinY() - 0.001;
+    double x = pt.getX() * width / screenWidth + bbox.getMinX() - 0.001;
+    double y = pt.getY() * height / screenHeight + bbox.getMinY() - 0.001;
 
-	x = max(bbox.getMinX(), x);
-	x = min(bbox.getMaxX(), x);
-	y = max(bbox.getMinY(), y);
-	y = min(bbox.getMaxY(), y);
-	pt = hw6::Point(x, y);
+    x = max(bbox.getMinX(), x);
+    x = min(bbox.getMaxX(), x);
+    y = max(bbox.getMinY(), y);
+    y = min(bbox.getMaxY(), y);
+    pt = hw6::Point(x, y);
 }
 
 /*
- * »æÖÆ´úÂë
+ * ï¿½ï¿½ï¿½Æ´ï¿½ï¿½ï¿½
  */
-void display()
-{
-	// glClearColor(241 / 255.0, 238 / 255.0, 232 / 255.0, 0.0);
-	glClearColor(1.0, 1.0, 1.0, 0.0);
-	glClear(GL_COLOR_BUFFER_BIT);
+void display() {
+    // glClearColor(241 / 255.0, 238 / 255.0, 232 / 255.0, 0.0);
+    glClearColor(1.0, 1.0, 1.0, 0.0);
+    glClear(GL_COLOR_BUFFER_BIT);
 
-	glMatrixMode(GL_PROJECTION);
-	glLoadIdentity();
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
 
-	const hw6::Envelope bbox = pointQTree.getEnvelope();
-	gluOrtho2D(bbox.getMinX() - 0.001, bbox.getMaxX() + 0.001, bbox.getMinY() - 0.001, bbox.getMaxY() + 0.001);
+    const hw6::Envelope bbox = pointTree->getEnvelope();
+    gluOrtho2D(bbox.getMinX() - 0.001, bbox.getMaxX() + 0.001,
+               bbox.getMinY() - 0.001, bbox.getMaxY() + 0.001);
 
-	// µÀÂ·»æÖÆ
-	if (showRoad)
-	{
-		glColor3d(252 / 255.0, 214 / 255.0, 164 / 255.0);
-		for (size_t i = 0; i < roads.size(); ++i)
-			roads[i].draw();
-	}
+    // ï¿½ï¿½Â·ï¿½ï¿½ï¿½ï¿½
+    if (showRoad) {
+        glColor3d(252 / 255.0, 214 / 255.0, 164 / 255.0);
+        for (size_t i = 0; i < roads.size(); ++i)
+            roads[i].draw();
+    }
 
-	// µã»æÖÆ
-	if (!(mode == RANGELINE || mode == NNLINE))
-	{
-		glPointSize((float)pointSize);
-		glColor3d(0.0, 146 / 255.0, 247 / 255.0);
-		for (size_t i = 0; i < features.size(); ++i)
-			features[i].draw();
-	}
+    // ï¿½ï¿½ï¿½ï¿½ï¿?
+    if (!(mode == RANGELINE || mode == NNLINE)) {
+        glPointSize((float)pointSize);
+        glColor3d(0.0, 146 / 255.0, 247 / 255.0);
+        for (size_t i = 0; i < features.size(); ++i)
+            features[i].draw();
+    }
 
-	// ËÄ²æÊ÷»æÖÆ
-	if (showQuadTree)
-	{
-		glColor3d(0.0, 146 / 255.0, 247 / 255.0);
-		if (mode == RANGELINE || mode == NNLINE)
-			roadQTree.draw();
-		else
-			pointQTree.draw();
-	}
+    // ï¿½Ä²ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+    if (showTree) {
+        glColor3d(0.0, 146 / 255.0, 247 / 255.0);
+        if (mode == RANGELINE || mode == NNLINE)
+            roadTree->draw();
+        else
+            pointTree->draw();
+    }
 
-	// ÀëÊó±ê×î½üµã»æÖÆ
-	if (mode == NNPOINT)
-	{
-		glPointSize(5.0);
-		glColor3d(0.9, 0.0, 0.0);
-		nearestFeature.draw();
-	}
+    // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿?
+    if (mode == NNPOINT) {
+        glPointSize(5.0);
+        glColor3d(0.9, 0.0, 0.0);
+        nearestFeature.draw();
+    }
 
-	// ÀëÊó±ê×î½üµÀÂ·»æÖÆ
-	if (mode == NNLINE)
-	{
-		glLineWidth(3.0);
-		glColor3d(0.9, 0.0, 0.0);
-		nearestFeature.draw();
-		glLineWidth(1.0);
-	}
+    // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Â·ï¿½ï¿½ï¿½ï¿½
+    if (mode == NNLINE) {
+        glLineWidth(3.0);
+        glColor3d(0.9, 0.0, 0.0);
+        nearestFeature.draw();
+        glLineWidth(1.0);
+    }
 
-	// ÇøÓòÑ¡Ôñ»æÖÆ
-	if (mode == RANGEPOINT || mode == RANGELINE)
-	{
-		glColor3d(0.0, 0.0, 0.0);
-		selectedRect.draw();
-		glColor3d(1.0, 0.0, 0.0);
-		for (size_t i = 0; i < selectedFeatures.size(); ++i)
-			selectedFeatures[i].draw();
-	}
+    // ï¿½ï¿½ï¿½ï¿½Ñ¡ï¿½ï¿½ï¿½ï¿½ï¿?
+    if (mode == RANGEPOINT || mode == RANGELINE) {
+        glColor3d(0.0, 0.0, 0.0);
+        selectedRect.draw();
+        glColor3d(1.0, 0.0, 0.0);
+        for (size_t i = 0; i < selectedFeatures.size(); ++i)
+            selectedFeatures[i].draw();
+    }
 
-	glFlush();
-	glutSwapBuffers();
+    glFlush();
+    glutSwapBuffers();
 }
 
 /*
- * Êó±êºÍ¼üÅÌ½»»¥
+ * ï¿½ï¿½ï¿½Í¼ï¿½ï¿½Ì½ï¿½ï¿½ï¿½
  */
-void mouse(int button, int state, int x, int y)
-{
-	if (button == GLUT_LEFT_BUTTON && state == GLUT_DOWN)
-	{
-		if (mode == RANGEPOINT || mode == RANGELINE)
-		{
-			if (firstPoint)
-			{
-				selectedFeatures.clear();
-				corner[0] = hw6::Point(x, screenHeight - y);
-				transfromPt(corner[0]);
-			}
-			else
-			{
-				corner[1] = hw6::Point(x, screenHeight - y);
-				transfromPt(corner[1]);
-				selectedRect = hw6::Envelope(min(corner[0].getX(), corner[1].getX()), max(corner[0].getX(), corner[1].getX()),
-											 min(corner[0].getY(), corner[1].getY()), max(corner[0].getY(), corner[1].getY()));
-				rangeQuery();
-			}
-			firstPoint = !firstPoint;
-			glutPostRedisplay();
-		}
-	}
+void mouse(int button, int state, int x, int y) {
+    if (button == GLUT_LEFT_BUTTON && state == GLUT_DOWN) {
+        if (mode == RANGEPOINT || mode == RANGELINE) {
+            if (firstPoint) {
+                selectedFeatures.clear();
+                corner[0] = hw6::Point(x, screenHeight - y);
+                transfromPt(corner[0]);
+            } else {
+                corner[1] = hw6::Point(x, screenHeight - y);
+                transfromPt(corner[1]);
+                selectedRect =
+                    hw6::Envelope(min(corner[0].getX(), corner[1].getX()),
+                                  max(corner[0].getX(), corner[1].getX()),
+                                  min(corner[0].getY(), corner[1].getY()),
+                                  max(corner[0].getY(), corner[1].getY()));
+                rangeQuery();
+            }
+            firstPoint = !firstPoint;
+            glutPostRedisplay();
+        }
+    }
 }
 
-void passiveMotion(int x, int y)
-{
-	corner[1] = hw6::Point(x, screenHeight - y);
+void passiveMotion(int x, int y) {
+    corner[1] = hw6::Point(x, screenHeight - y);
 
-	if ((mode == RANGEPOINT || mode == RANGELINE) && !firstPoint)
-	{
-		corner[1] = hw6::Point(x, screenHeight - y);
-		transfromPt(corner[1]);
-		selectedRect = hw6::Envelope(min(corner[0].getX(), corner[1].getX()), max(corner[0].getX(), corner[1].getX()),
-									 min(corner[0].getY(), corner[1].getY()), max(corner[0].getY(), corner[1].getY()));
-		rangeQuery();
+    if ((mode == RANGEPOINT || mode == RANGELINE) && !firstPoint) {
+        corner[1] = hw6::Point(x, screenHeight - y);
+        transfromPt(corner[1]);
+        selectedRect = hw6::Envelope(min(corner[0].getX(), corner[1].getX()),
+                                     max(corner[0].getX(), corner[1].getX()),
+                                     min(corner[0].getY(), corner[1].getY()),
+                                     max(corner[0].getY(), corner[1].getY()));
+        rangeQuery();
 
-		glutPostRedisplay();
-	}
-	else if (mode == NNPOINT || mode == NNLINE)
-	{
-		hw6::Point p(x, screenHeight - y);
-		transfromPt(p);
-		NNQuery(p);
+        glutPostRedisplay();
+    } else if (mode == NNPOINT || mode == NNLINE) {
+        hw6::Point p(x, screenHeight - y);
+        transfromPt(p);
+        NNQuery(p);
 
-		glutPostRedisplay();
-	}
+        glutPostRedisplay();
+    }
 }
 
-void changeSize(int w, int h)
-{
-	screenWidth = w;
-	screenHeight = h;
-	glViewport(0, 0, w, h);
-	glutPostRedisplay();
+void changeSize(int w, int h) {
+    screenWidth = w;
+    screenHeight = h;
+    glViewport(0, 0, w, h);
+    glutPostRedisplay();
 }
 
-void processNormalKeys(unsigned char key, int x, int y)
-{
-	switch (key)
-	{
-	case 27:
-		exit(0);
-		break;
-	case 'N':
-		mode = NNLINE;
-		break;
-	case 'n':
-		mode = NNPOINT;
-		break;
-	case 'S':
-		mode = RANGELINE;
-		firstPoint = true;
-		break;
-	case 's':
-		mode = RANGEPOINT;
-		firstPoint = true;
-		break;
-	case 'B':
-	case 'b':
-		loadStationData();
-		mode = Default;
-		break;
-	case 'T':
-	case 't':
-		loadTaxiData();
-		mode = Default;
-		break;
-	case 'R':
-	case 'r':
-		showRoad = !showRoad;
-		break;
-	case 'Q':
-	case 'q':
-		showQuadTree = !showQuadTree;
-		break;
-	case '+':
-		pointSize *= 1.1;
-		break;
-	case '-':
-		pointSize /= 1.1;
-		break;
-	case '1':
-		test(TEST1);
-		break;
-	case '2':
-		test(TEST2);
-		break;
-	case '3':
-		test(TEST3);
-		break;
-	case '4':
-		test(TEST4);
-		break;
-	case '5':
-		test(TEST5);
-		break;
-	case '6':
-		test(TEST6);
-		break;
-	case '7':
-		test(TEST7);
-		break;
-	case '8':
-		test(TEST8);
-		break;
-	default:
-		mode = Default;
-		break;
-	}
-	glutPostRedisplay();
+void processNormalKeys(unsigned char key, int x, int y) {
+    switch (key) {
+    case 27:
+        exit(0);
+        break;
+    case 'N':
+        mode = NNLINE;
+        break;
+    case 'n':
+        mode = NNPOINT;
+        break;
+    case 'S':
+        mode = RANGELINE;
+        firstPoint = true;
+        break;
+    case 's':
+        mode = RANGEPOINT;
+        firstPoint = true;
+        break;
+    case 'B':
+    case 'b':
+        loadStationData();
+        mode = Default;
+        break;
+    case 'T':
+    case 't':
+        loadTaxiData();
+        mode = Default;
+        break;
+    case 'R':
+    case 'r':
+        showRoad = !showRoad;
+        break;
+    case 'Q':
+    case 'q':
+        showTree = !showTree;
+        break;
+    case '+':
+        pointSize *= 1.1;
+        break;
+    case '-':
+        pointSize /= 1.1;
+        break;
+    case '1':
+        test(TEST1);
+        break;
+    case '2':
+        test(TEST2);
+        break;
+    case '3':
+        test(TEST3);
+        break;
+    case '4':
+        test(TEST4);
+        break;
+    case '5':
+        test(TEST5);
+        break;
+    case '6':
+        test(TEST6);
+        break;
+    case '7':
+        test(TEST7);
+        break;
+        TreeTy::test(key - '0');
+        break;
+    default:
+        mode = Default;
+        break;
+    }
+    glutPostRedisplay();
 }
 
-/*** 
- * @Description: Ö÷º¯Êý
- * @Author: jwimd chenjiewei@zju.edu.cn
- * @msg: None
- * @param {int} argc
- * @param {char} *argv
- * @return {*}
- */
-int main(int argc, char *argv[])
-{
-	cout << "Key Usage:\n"
-		 << "  S  : range search for roads\n"
-		 << "  s  : range search for stations\n"
-		 << "  N  : nearest road search\n"
-		 << "  n  : nearest station search\n"
-		 << "  B/b: Bicycle data\n"
-		 << "  T/t: Taxi data\n"
-		 << "  R/r: show Road\n"
-		 << "  Q/q: show QuadTree\n"
-		 << "  +  : increase point size\n"
-		 << "  -  : decrease point size\n"
-		 << "  1  : Test Envelope contain, interset and union\n"
-		 << "  2  : Test distance between Point and LineString\n"
-		 << "  3  : Test distance between Point and Polygon\n"
-		 << "  4  : Test quadtree construction\n"
-		 << "  5  : Test (your option here)\n"
-		 << "  8  : Quadtree performance analysis\n"
-		 << "  ESC: quit\n"
-		 << endl;
+int main(int argc, char *argv[]) {
+    cout << "Key Usage:\n"
+         << "  S  : range search for roads\n"
+         << "  s  : range search for stations\n"
+         << "  N  : nearest road search\n"
+         << "  n  : nearest station search\n"
+         << "  B/b: Bicycle data\n"
+         << "  T/t: Taxi data\n"
+         << "  R/r: show Road\n"
+         << "  Q/q: show Tree\n"
+         << "  +  : increase point size\n"
+         << "  -  : decrease point size\n"
+         << "  1  : Test Envelope contain, interset and union\n"
+         << "  2  : Test distance between Point and LineString\n"
+         << "  3  : Test distance between Point and Polygon\n"
+         << "  4  : Test tree construction\n"
+         << "  5  : Test inner rings inplement of Polygon\n"
+         << "  6  : Test (your option here)\n"
+         << "  8  : Tree performance analysis\n"
+         << "  ESC: quit\n"
+         << endl;
 
-	loadRoadData();
+    pointTree = make_unique<TreeTy>();
+    roadTree = make_unique<TreeTy>();
 
-	loadStationData();
+    loadRoadData();
 
-	glutInit(&argc, argv);
-	glutInitWindowSize(screenWidth, screenHeight);
-	glutInitWindowPosition(0, 0);
-	glutInitDisplayMode(GLUT_RGB | GLUT_DOUBLE);
-	glutCreateWindow("New York");
+    loadStationData();
 
-	glutMouseFunc(mouse);
-	glutDisplayFunc(display);
-	glutPassiveMotionFunc(passiveMotion);
-	glutReshapeFunc(changeSize);
-	glutKeyboardFunc(processNormalKeys);
+    glutInit(&argc, argv);
+    glutInitWindowSize(screenWidth, screenHeight);
+    glutInitWindowPosition(0, 0);
+    glutInitDisplayMode(GLUT_RGB | GLUT_DOUBLE);
+    glutCreateWindow("New York");
 
-	glutMainLoop();
+    glutMouseFunc(mouse);
+    glutDisplayFunc(display);
+    glutPassiveMotionFunc(passiveMotion);
+    glutReshapeFunc(changeSize);
+    glutKeyboardFunc(processNormalKeys);
 
-	return 0;
+    glutMainLoop();
+
+    return 0;
 }
