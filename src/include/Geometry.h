@@ -154,7 +154,12 @@ class Polygon : public Geometry {
 
     LineString getExteriorRing() const { return exteriorRing; }
 
-    virtual void constructEnvelope() { envelope = exteriorRing.getEnvelope(); }
+    std::vector<LineString> getInnerRings() const { return innerRings; }
+
+    virtual void constructEnvelope()
+    {
+      envelope = exteriorRing.getEnvelope();
+    }
 
     // Euclidean distance
     virtual double distance(const Point *point) const {

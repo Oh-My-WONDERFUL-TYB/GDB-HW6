@@ -61,13 +61,13 @@ namespace hw6
                     (y - point->y) * (y - point->y));
     }
 
-    /*** 
+    /***
      * @Description: 计算点线距离代码
      * @Author: jwimd chenjiewei@zju.edu.cn
      * @msg: None
      * @param {LineString} *line
      * @return {*}
-     */    
+     */
     double Point::distance(const LineString *line) const
     {
         double mindist = line->getPointN(0).distance(this);
@@ -97,17 +97,36 @@ namespace hw6
         return mindist;
     }
 
-    /*** 
+    /***
      * @Description: 计算点多边形距离代码
      * @Author: jwimd chenjiewei@zju.edu.cn
      * @msg: None
      * @param {Polygon} *polygon
      * @return {*}
-     */    
+     */
     double Point::distance(const Polygon *polygon) const
     {
         LineString line = polygon->getExteriorRing();
         size_t n = line.numPoints();
+
+        //计算是否处于内环内部
+
+        std::vector<LineString> innerRings = polygon->getInnerRings();
+
+        for (std::vector<LineString>::iterator ring = innerRings.begin(); ring < innerRings.end(); ++ring)
+        {
+            for (size_t i = 0; i < ring->numPoints() - 1; ++i)
+            {
+                double x1 = line.getPointN(i).getX();
+                double y1 = line.getPointN(i).getY();
+                double x2 = line.getPointN(i + 1).getX();
+                double y2 = line.getPointN(i + 1).getY();
+
+                if ((x1 <= x || x2 <= x) &&
+                    ((y1 >= y && y2 <= y && (x1 - x2) / (y1 - y2) * (y - y2) + x2 <= x) || (y1 <= y && y2 >= y && (x1 - x2) / (y1 - y2) * (y - y2) + x2 <= x)))
+                    return this->distance(ring.base());
+            }
+        }
 
         bool inPolygon = false;
         // Task whether Point P(x, y) is within Polygon (less than 15 lines)
@@ -119,9 +138,8 @@ namespace hw6
             double x2 = line.getPointN(i + 1).getX();
             double y2 = line.getPointN(i + 1).getY();
 
-            if ((x1 <= x || x2 <= x) && \
-                ((y1 >= y && y2 <= y && (x1 - x2) / (y1 - y2) * (y - y2) + x2 <= x)  \
-                || (y1 <= y && y2 >= y && (x1 - x2) / (y1 - y2) * (y - y2) + x2 <= x)))
+            if ((x1 <= x || x2 <= x) &&
+                ((y1 >= y && y2 <= y && (x1 - x2) / (y1 - y2) * (y - y2) + x2 <= x) || (y1 <= y && y2 >= y && (x1 - x2) / (y1 - y2) * (y - y2) + x2 <= x)))
                 inPolygon = !inPolygon;
         }
 
