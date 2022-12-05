@@ -1,3 +1,11 @@
+/***
+ * @Description: Geometry Define
+ * @Author: jwimd chenjiewei@zju.edu.cn
+ * @Date: 2022-11-12 19:16:44
+ * @LastEditors: jwimd chenjiewei@zju.edu.cn
+ * @LastEditTime: 2022-12-05 23:22:38
+ * @FilePath: /GDB-HW6/src/Geometry.cpp
+ */
 #include "Geometry.h"
 #include <cmath>
 #include <GL/freeglut.h>
@@ -20,7 +28,7 @@ namespace hw6
 
     bool Envelope::contain(const Envelope &envelope) const
     {
-        // Task ï¿½ï¿½ï¿½ï¿½Envelopeï¿½Ç·ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ï?
+        // Task ï¿½ï¿½ï¿½ï¿½Envelopeï¿½Ç·ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½?
         // TODO
         return false;
     }
@@ -62,7 +70,7 @@ namespace hw6
     }
 
     /***
-     * @Description: ¼ÆËãµãÏß¾àÀë´úÂë
+     * @Description: ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ß¾ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
      * @Author: jwimd chenjiewei@zju.edu.cn
      * @msg: None
      * @param {LineString} *line
@@ -98,7 +106,7 @@ namespace hw6
     }
 
     /***
-     * @Description: ¼ÆËãµã¶à±ßÐÎ¾àÀë´úÂë
+     * @Description: ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Î¾ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
      * @Author: jwimd chenjiewei@zju.edu.cn
      * @msg: None
      * @param {Polygon} *polygon
@@ -109,7 +117,7 @@ namespace hw6
         LineString line = polygon->getExteriorRing();
         size_t n = line.numPoints();
 
-        //¼ÆËãÊÇ·ñ´¦ÓÚÄÚ»·ÄÚ²¿
+        //ï¿½ï¿½ï¿½ï¿½ï¿½Ç·ï¿½ï¿½ï¿½ï¿½Ú»ï¿½ï¿½Ú²ï¿½
 
         std::vector<LineString> innerRings = polygon->getInnerRings();
 
@@ -149,6 +157,66 @@ namespace hw6
         return mindist;
     }
 
+    /***
+     * @Description: Distance between point and mutipoint
+     * @Author: jwimd chenjiewei@zju.edu.cn
+     * @msg: None
+     * @param {MutiPoint} *mutiPolygon
+     * @return {*}
+     */
+    double Point::distance(const MutiPoint *mutiPoint) const
+    {
+        double mindst = -1.0;
+
+        for (size_t i = 0; i < mutiPoint->numPoints(); ++i)
+        {
+            if (mindst < 0 || mutiPoint->getPointN(i).distance(this) < mindst)
+                mindst = mutiPoint->getPointN(i).distance(this);
+        }
+
+        return mindst;
+    }
+
+    /***
+     * @Description: Calculate distance between MutiLineString and point
+     * @Author: jwimd chenjiewei@zju.edu.cn
+     * @msg: None
+     * @param {MutiLineString} *mutiLineString
+     * @return {*}
+     */
+    double Point::distance(const MutiLineString *mutiLineString) const
+    {
+        double mindst = -1.0;
+
+        for (size_t i = 0; i < mutiLineString->numLineStrings(); ++i)
+        {
+            if (mindst < 0 || mutiLineString->getLineStringN(i).distance(this) < mindst)
+                mindst = mutiLineString->getLineStringN(i).distance(this);
+        }
+
+        return mindst;
+    }
+
+    /***
+     * @Description: Calculate distance between MutiPolygon and point
+     * @Author: jwimd chenjiewei@zju.edu.cn
+     * @msg: None
+     * @param {MutiPolygon} *mutiPolygon
+     * @return {*}
+     */
+    double Point::distance(const MutiPolygon *mutiPolygon) const
+    {
+        double mindst = -1.0;
+
+        for (size_t i = 0; i < mutiPolygon->numPolygons(); ++i)
+        {
+            if (mindst < 0 || mutiPolygon->getPolygonN(i).distance(this) < mindst)
+                mindst = mutiPolygon->getPolygonN(i).distance(this);
+        }
+
+        return mindst;
+    }
+
     bool Point::intersects(const Envelope &rect) const
     {
         return (x >= rect.getMinX()) && (x <= rect.getMaxX()) &&
@@ -180,16 +248,115 @@ namespace hw6
         envelope = Envelope(minX, maxX, minY, maxY);
     }
 
+    /***
+     * @Description: To Calculate the distance between two LineString
+     * @Author: jwimd chenjiewei@zju.edu.cn
+     * @msg: None
+     * @param {LineString} *line
+     * @return {*}
+     */
     double LineString::distance(const LineString *line) const
     {
-        // TODO
-        return NOT_IMPLEMENT;
+        double mindst = -1.0;
+
+        if (this->intersects(line->getEnvelope())) // if envelope intersert
+        {
+            // calculate intersects
+            if (this->intersects(line))
+                return 0.0;
+        }
+
+        for (size_t i = 1; i < this->numPoints(); ++i)
+        {
+            if (mindst < 0 || this->points[i].distance(line) < mindst)
+                mindst = this->points[i].distance(line);
+        }
+
+        for (size_t i = 1; i < line->numPoints(); ++i)
+        {
+            if (mindst < 0 || line->getPointN(i).distance(this) < mindst)
+                mindst = line->getPointN(i).distance(this);
+        }
+
+        return mindst;
     }
 
+    /***
+     * @Description: Calculate Distance between LineString and Polygon
+     * @Author: jwimd chenjiewei@zju.edu.cn
+     * @msg: None
+     * @param {Polygon} *polygon
+     * @return {*}
+     */
     double LineString::distance(const Polygon *polygon) const
     {
-        // TODO
-        return NOT_IMPLEMENT;
+        double mindst = -1.0;
+
+        for (size_t i = 1; i < this->numPoints(); ++i)
+            if (mindst < 0 || this->points[i].distance(polygon) < mindst)
+                mindst = this->points[i].distance(polygon);
+
+        return mindst;
+    }
+
+    /***
+     * @Description: Distance between lineString and mutipoint
+     * @Author: jwimd chenjiewei@zju.edu.cn
+     * @msg: None
+     * @param {MutiPoint} *mutiPolygon
+     * @return {*}
+     */
+    double LineString::distance(const MutiPoint *mutiPoint) const
+    {
+        double mindst = -1.0;
+
+        for (size_t i = 0; i < mutiPoint->numPoints(); ++i)
+        {
+            if (mindst < 0 || mutiPoint->getPointN(i).distance(this) < mindst)
+                mindst = mutiPoint->getPointN(i).distance(this);
+        }
+
+        return mindst;
+    }
+
+    /***
+     * @Description: Distance between lineString and mutilineString
+     * @Author: jwimd chenjiewei@zju.edu.cn
+     * @msg: None
+     * @param {MutiPoint} *mutiPolygon
+     * @return {*}
+     */
+    double LineString::distance(const MutiLineString *mutiLineString) const
+    {
+        double mindst = -1.0;
+
+        for (size_t i = 0; i < mutiLineString->numLineStrings(); ++i)
+        {
+            if (mindst < 0 || mutiLineString->getLineStringN(i).distance(this) < mindst)
+                mindst = mutiLineString->getLineStringN(i).distance(this);
+        }
+
+        return mindst;
+    }
+
+    /***
+     * @Description:  Distance between lineString and mutiPolygon
+     * @Author: jwimd chenjiewei@zju.edu.cn
+     * @msg: None
+     * @param {MutiPolygon} *mutiPolygon
+     * @return {*}
+     */
+    double LineString::distance(const MutiPolygon *mutiPolygon) const
+    {
+        double mindst = -1.0;
+
+        for (size_t i = 0; i < mutiPolygon->numPolygons(); ++i)
+        {
+            if (mindst < 0 || mutiPolygon->getPolygonN(i).distance(this) < mindst)
+                mindst = mutiPolygon->getPolygonN(i).distance(this);
+        }
+
+        return mindst;
     }
 
     typedef int OutCode;
@@ -323,6 +490,76 @@ namespace hw6
         return false;
     }
 
+    /***
+     * @Description: Intersection between LineString
+     * @Author: jwimd chenjiewei@zju.edu.cn
+     * @msg: None
+     * @param {LineString} *line
+     * @return {bool for intersects}
+     */
+    bool LineString::intersects(const LineString *line) const
+    {
+        for (size_t i = 0; i < line->numPoints() - 1; ++i)
+        {
+            double x1_l2, y1_l2, x2_l2, y2_l2;
+            if (line->getPointN(i).getX() <= line->getPointN(i + 1).getX())
+            {
+                x1_l2 = line->getPointN(i).getX();
+                y1_l2 = line->getPointN(i).getY();
+                x2_l2 = line->getPointN(i + 1).getX();
+                y2_l2 = line->getPointN(i + 1).getY();
+            }
+            else
+            {
+                x1_l2 = line->getPointN(i + 1).getX();
+                y1_l2 = line->getPointN(i + 1).getY();
+                x2_l2 = line->getPointN(i).getX();
+                y2_l2 = line->getPointN(i).getY();
+            }
+
+            for (size_t i = 0; i < this->numPoints() - 1; ++i)
+            {
+                double x1_l1, y1_l1, x2_l1, y2_l1;
+                if (this->getPointN(i).getX() <= this->getPointN(i + 1).getX())
+                {
+                    x1_l1 = this->getPointN(i).getX();
+                    y1_l1 = this->getPointN(i).getY();
+                    x2_l1 = this->getPointN(i + 1).getX();
+                    y2_l1 = this->getPointN(i + 1).getY();
+                }
+                else
+                {
+                    x1_l1 = this->getPointN(i + 1).getX();
+                    y1_l1 = this->getPointN(i + 1).getY();
+                    x2_l1 = this->getPointN(i).getX();
+                    y2_l1 = this->getPointN(i).getY();
+                }
+
+                double k_1 = (y2_l1 - y1_l1) / (x2_l1 - x1_l1);
+                double k_2 = (y2_l2 - y1_l2) / (x2_l2 - x1_l2);
+
+                double b_1 = y1_l1 - k_1 * x1_l1;
+                double b_2 = y1_l2 - k_2 * x1_l2;
+
+                if (k_1 == k_2)
+                {
+                    if (b_1 == b_2)
+                        return true;
+                    else
+                        continue;
+                }
+
+                double x = (b_2 - b_1) / (k_1 - k_2);
+                double y = k_1 * x + b_1;
+
+                if (x1_l1 <= x && x2_l1 >= x && x1_l2 <= x && x2_l2 >= x)
+                    return true;
+            }
+        }
+
+        return false;
+    }
+
     void LineString::draw() const
     {
         glBegin(GL_LINE_STRIP);
@@ -346,10 +583,86 @@ namespace hw6
     /*
      * Polygon
      */
+    /***
+     * @Description: Update innerRing
+     * @Author: jwimd chenjiewei@zju.edu.cn
+     * @msg: None
+     * @param {Polygon} *polygon
+     * @return {*}
+     */
     double Polygon::distance(const Polygon *polygon) const
     {
-        return std::min(exteriorRing.distance(polygon),
-                        polygon->getExteriorRing().distance(this));
+
+        double mindst = exteriorRing.distance(polygon);
+        mindst = std::min(mindst, polygon->getExteriorRing().distance(this));
+
+        for (size_t i = 0; i < innerRings.size(); i++)
+            mindst = std::min(mindst, innerRings[i].distance(polygon));
+
+        for (size_t i = 0; i < innerRings.size(); i++)
+            mindst = std::min(mindst, polygon->getInnerRings()[i].distance(this));
+
+        return mindst;
+    }
+
+    /***
+     * @Description: Distance between polygon and mutipoint
+     * @Author: jwimd chenjiewei@zju.edu.cn
+     * @msg: None
+     * @param {MutiPoint} *mutiPolygon
+     * @return {*}
+     */
+    double Polygon::distance(const MutiPoint *mutiPoint) const
+    {
+        double mindst = -1.0;
+
+        for (size_t i = 0; i < mutiPoint->numPoints(); ++i)
+        {
+            if (mindst < 0 || mutiPoint->getPointN(i).distance(this) < mindst)
+                mindst = mutiPoint->getPointN(i).distance(this);
+        }
+
+        return mindst;
+    }
+
+    /***
+     * @Description: Distance between polygon and mutilinestring
+     * @Author: jwimd chenjiewei@zju.edu.cn
+     * @msg: None
+     * @param {MutiPoint} *mutiPolygon
+     * @return {*}
+     */
+    double Polygon::distance(const MutiLineString *mutiLineString) const
+    {
+        double mindst = -1.0;
+
+        for (size_t i = 0; i < mutiLineString->numLineStrings(); ++i)
+        {
+            if (mindst < 0 || mutiLineString->getLineStringN(i).distance(this) < mindst)
+                mindst = mutiLineString->getLineStringN(i).distance(this);
+        }
+
+        return mindst;
+    }
+
+    /***
+     * @Description: Distance between polygon and mutiPolygon
+     * @Author: jwimd chenjiewei@zju.edu.cn
+     * @msg: None
+     * @param {MutiPolygon} *mutiPolygon
+     * @return {*}
+     */
+    double Polygon::distance(const MutiPolygon *mutiPolygon) const
+    {
+        double mindst = -1.0;
+
+        for (size_t i = 0; i < mutiPolygon->numPolygons(); ++i)
+        {
+            if (mindst < 0 || mutiPolygon->getPolygonN(i).distance(this) < mindst)
+                mindst = mutiPolygon->getPolygonN(i).distance(this);
+        }
+
+        return mindst;
     }
 
     bool Polygon::intersects(const Envelope &rect) const
@@ -358,17 +671,405 @@ namespace hw6
         return true;
     }
 
-    void Polygon::draw() const { exteriorRing.draw(); }
+    /***
+     * @Description: Update innerRings
+     * @Author: jwimd chenjiewei@zju.edu.cn
+     * @msg: None
+     * @return {*}
+     */
+    void Polygon::draw() const
+    {
+        exteriorRing.draw();
+        for (size_t i = 0; i < this->innerRings.size(); i++)
+        {
+            innerRings[i].draw();
+        }
+    }
 
+    /***
+     * @Description: Update innerRings
+     * @Author: jwimd chenjiewei@zju.edu.cn
+     * @msg: None
+     * @return {*}
+     */
     void Polygon::print() const
     {
         std::cout << "Polygon(";
+        std::cout << "(";
         for (size_t i = 0; i < exteriorRing.numPoints(); ++i)
         {
             if (i != 0)
                 std::cout << ", ";
             Point p = exteriorRing.getPointN(i);
             std::cout << p.getX() << " " << p.getY();
+        }
+        std::cout << ")";
+
+        for (size_t i = 0; i < innerRings.size(); ++i)
+        {
+            if (i != innerRings.size() - 1)
+                std::cout << ", ";
+
+            std::cout << "(";
+            for (size_t j = 0; j < innerRings[i].numPoints(); ++j)
+            {
+                if (j != 0)
+                    std::cout << ", ";
+                Point p = innerRings[i].getPointN(j);
+                std::cout << p.getX() << " " << p.getY();
+            }
+
+            std::cout << ")";
+        }
+        std::cout << ")";
+    }
+
+    /***
+     * @Description: Construct Evenlope For MutiPoint
+     * @Author: jwimd chenjiewei@zju.edu.cn
+     * @msg: None
+     * @return {*}
+     */
+    void MutiPoint::constructEnvelope()
+    {
+        double minX, minY, maxX, maxY;
+        maxX = minX = points[0].getX();
+        maxY = minY = points[0].getY();
+        for (size_t i = 1; i < points.size(); ++i)
+        {
+            maxX = std::max(maxX, points[i].getX());
+            maxY = std::max(maxY, points[i].getY());
+            minX = std::min(minX, points[i].getX());
+            minY = std::min(minY, points[i].getY());
+        }
+        envelope = Envelope(minX, maxX, minY, maxY);
+    }
+
+    /***
+     * @Description: Calculate Distance between MutiPoints
+     * @Author: jwimd chenjiewei@zju.edu.cn
+     * @msg: None
+     * @param {MutiPoint} *mutiPoint
+     * @return {*}
+     */
+    double MutiPoint::distance(const MutiPoint *mutiPoint) const
+    {
+        double mindst = -1.0;
+
+        for (size_t i = 0; i < numPoints(); ++i)
+            if (mindst < 0 || this->getPointN(i).distance(mutiPoint) < mindst)
+                mindst = this->getPointN(i).distance(mutiPoint);
+
+        return mindst;
+    }
+
+    /***
+     * @Description: Calculate Distance between MutiPoint and MutiLineString
+     * @Author: jwimd chenjiewei@zju.edu.cn
+     * @msg: None
+     * @param {MutiPoint} *mutiPoint
+     * @return {*}
+     */
+    double MutiPoint::distance(const MutiLineString *mutiLineString) const
+    {
+        double mindst = -1.0;
+
+        for (size_t i = 0; i < mutiLineString->numLineStrings(); ++i)
+        {
+            if (mindst < 0 || mutiLineString->getLineStringN(i).distance(this) < mindst)
+                mindst = mutiLineString->getLineStringN(i).distance(this);
+        }
+
+        return mindst;
+    }
+
+    /***
+     * @Description: Calculate Distance between MutiPoint and MutiPolygon
+     * @Author: jwimd chenjiewei@zju.edu.cn
+     * @msg: None
+     * @param {MutiPolygon} *mutiPolygon
+     * @return {*}
+     */
+    double MutiPoint::distance(const MutiPolygon *mutiPolygon) const
+    {
+        double mindst = -1.0;
+
+        for (size_t i = 0; i < mutiPolygon->numPolygons(); ++i)
+        {
+            if (mindst < 0 || mutiPolygon->getPolygonN(i).distance(this) < mindst)
+                mindst = mutiPolygon->getPolygonN(i).distance(this);
+        }
+
+        return mindst;
+    }
+
+    /***
+     * @Description: Intersect for MutiPoint
+     * @Author: jwimd chenjiewei@zju.edu.cn
+     * @msg: None
+     * @param {Envelope} &rect
+     * @return {*}
+     */
+    bool MutiPoint::intersects(const Envelope &rect) const
+    {
+        for (size_t i = 0; i < numPoints(); ++i)
+            if (getPointN(i).intersects(rect))
+                return true;
+        return false;
+    }
+
+    /***
+     * @Description: Drawing MutiPoint
+     * @Author: jwimd chenjiewei@zju.edu.cn
+     * @msg: None
+     * @return {*}
+     */
+    void MutiPoint::draw() const
+    {
+        for (size_t i = 0; i < numPoints(); ++i)
+            getPointN(i).draw();
+    }
+
+    /***
+     * @Description: Print MutiPoint
+     * @Author: jwimd chenjiewei@zju.edu.cn
+     * @msg: None
+     * @return {*}
+     */
+    void MutiPoint::print() const
+    {
+        std::cout << "MutiPoint(";
+        for (size_t i = 0; i < points.size(); ++i)
+        {
+            if (i != 0)
+                std::cout << ", ";
+            std::cout << points[i].getX() << " " << points[i].getY();
+        }
+        std::cout << ")";
+    }
+
+    /***
+     * @Description: Construct Evenlope For MutiLineString
+     * @Author: jwimd chenjiewei@zju.edu.cn
+     * @msg: None
+     * @return {*}
+     */
+    void MutiLineString::constructEnvelope()
+    {
+
+        double minX, minY, maxX, maxY;
+        maxX = minX = getLineStringN(0).getPointN(0).getX();
+        maxY = minY = getLineStringN(0).getPointN(0).getY();
+        for (size_t index = 0; index < numLineStrings(); ++index)
+        {
+            for (size_t i = 1; i < getLineStringN(index).numPoints(); ++i)
+            {
+                maxX = std::max(maxX, getLineStringN(index).getPointN(i).getX());
+                maxY = std::max(maxY, getLineStringN(index).getPointN(i).getY());
+                minX = std::min(minX, getLineStringN(index).getPointN(i).getX());
+                minY = std::min(minY, getLineStringN(index).getPointN(i).getY());
+            }
+        }
+        envelope = Envelope(minX, maxX, minY, maxY);
+    }
+
+    /***
+     * @Description: Calculate Distance between MutiLineStrings
+     * @Author: jwimd chenjiewei@zju.edu.cn
+     * @msg: None
+     * @param {MutiLineString} *mutiLineString
+     * @return {*}
+     */
+    double MutiLineString::distance(const MutiLineString *mutiLineString) const
+    {
+        double mindst = -1.0;
+
+        for (size_t i = 0; i < numLineStrings(); ++i)
+            if (mindst < 0 || this->getLineStringN(i).distance(mutiLineString) < mindst)
+                mindst = this->getLineStringN(i).distance(mutiLineString);
+
+        return mindst;
+    }
+
+    /***
+     * @Description: Calculate Distance between MutiPolygon
+     * @Author: jwimd chenjiewei@zju.edu.cn
+     * @msg: None
+     * @param {MutiPolygon} *mutiPolygon
+     * @return {*}
+     */
+    double MutiLineString::distance(const MutiPolygon *mutiPolygon) const
+    {
+        double mindst = -1.0;
+
+        for (size_t i = 0; i < mutiPolygon->numPolygons(); ++i)
+        {
+            if (mindst < 0 || mutiPolygon->getPolygonN(i).distance(this) < mindst)
+                mindst = mutiPolygon->getPolygonN(i).distance(this);
+        }
+
+        return mindst;
+    }
+
+    /***
+     * @Description: Intersect for MutiLineString
+     * @Author: jwimd chenjiewei@zju.edu.cn
+     * @msg: None
+     * @param {Envelope} &rect
+     * @return {*}
+     */
+    bool MutiLineString::intersects(const Envelope &rect) const
+    {
+        for (size_t i = 0; i < numLineStrings(); ++i)
+            if (getLineStringN(i).intersects(rect))
+                return true;
+        return false;
+    }
+
+    /***
+     * @Description: Drawing mutiLineString
+     * @Author: jwimd chenjiewei@zju.edu.cn
+     * @msg: None
+     * @return {*}
+     */
+    void MutiLineString::draw() const
+    {
+        for (size_t i = 0; i < numLineStrings(); i++)
+        {
+            getLineStringN(i).draw();
+        }
+    }
+
+    /***
+     * @Description: Print MutiLineString
+     * @Author: jwimd chenjiewei@zju.edu.cn
+     * @msg: None
+     * @return {*}
+     */
+    void MutiLineString::print() const
+    {
+        std::cout << "MutiLineString(";
+        for (size_t index = 0; index < numLineStrings(); ++index)
+        {
+            if (index != 0)
+                std::cout << ',';
+            std::cout << "(";
+            for (size_t i = 0; i < getLineStringN(index).numPoints(); ++i)
+            {
+                if (i != 0)
+                    std::cout << ", ";
+                std::cout << getLineStringN(index).getPointN(i).getX() << " " << getLineStringN(index).getPointN(i).getY();
+            }
+            std::cout << ")";
+        }
+        std::cout << ")";
+    }
+
+    /***
+     * @Description: Construct Evenlope For MutiPolygon
+     * @Author: jwimd chenjiewei@zju.edu.cn
+     * @msg: None
+     * @return {*}
+     */
+    void MutiPolygon::constructEnvelope()
+    {
+        double minX, minY, maxX, maxY;
+        maxX = minX = getPolygonN(0).getExteriorRing().getPointN(0).getX();
+        maxY = minY = getPolygonN(0).getExteriorRing().getPointN(0).getY();
+        for (size_t index = 0; index < numPolygons(); ++index)
+        {
+            for (size_t i = 1; i < getPolygonN(index).getExteriorRing().numPoints(); ++i)
+            {
+                maxX = std::max(maxX, getPolygonN(index).getExteriorRing().getPointN(i).getX());
+                maxY = std::max(maxY, getPolygonN(index).getExteriorRing().getPointN(i).getY());
+                minX = std::min(minX, getPolygonN(index).getExteriorRing().getPointN(i).getX());
+                minY = std::min(minY, getPolygonN(index).getExteriorRing().getPointN(i).getY());
+            }
+        }
+        envelope = Envelope(minX, maxX, minY, maxY);
+    }
+
+    double MutiPolygon::distance(const MutiPolygon *mutiPolygon) const
+    {
+        double mindst = -1.0;
+
+        for (size_t i = 0; i < numPolygons(); ++i)
+            if (mindst < 0 || this->getPolygonN(i).distance(mutiPolygon) < mindst)
+                mindst = this->getPolygonN(i).distance(mutiPolygon);
+
+        return mindst;
+    }
+
+    /***
+     * @Description: Intersect for MutiPloygon
+     * @Author: jwimd chenjiewei@zju.edu.cn
+     * @msg: None
+     * @param {Envelope} &rect
+     * @return {*}
+     */
+    bool MutiPolygon::intersects(const Envelope &rect) const
+    {
+        for (size_t i = 0; i < numPolygons(); ++i)
+            if (getPolygonN(i).intersects(rect))
+                return true;
+        return false;
+    }
+
+    /***
+     * @Description: Drawing mutiPolygon
+     * @Author: jwimd chenjiewei@zju.edu.cn
+     * @msg: None
+     * @return {*}
+     */
+    void MutiPolygon::draw() const
+    {
+        for (size_t i = 0; i < numPolygons(); i++)
+        {
+            getPolygonN(i).draw();
+        }
+    }
+
+    /***
+     * @Description: Print MutiPolygon
+     * @Author: jwimd chenjiewei@zju.edu.cn
+     * @msg: None
+     * @return {*}
+     */
+    void MutiPolygon::print() const
+    {
+        std::cout << "MutiPolygon(";
+        for (size_t index = 0; index < numPolygons(); ++index)
+        {
+            if (index != 0)
+                std::cout << ',';
+            std::cout << "(";
+            std::cout << "(";
+            for (size_t i = 0; i < getPolygonN(index).getExteriorRing().numPoints(); ++i)
+            {
+                if (i != 0)
+                    std::cout << ", ";
+                Point p = getPolygonN(index).getExteriorRing().getPointN(i);
+                std::cout << p.getX() << " " << p.getY();
+            }
+            std::cout << ")";
+
+            for (size_t i = 0; i < getPolygonN(index).getInnerRings().size(); ++i)
+            {
+                if (i != getPolygonN(index).getInnerRings().size() - 1)
+                    std::cout << ", ";
+
+                std::cout << "(";
+                for (size_t j = 0; j < getPolygonN(index).getInnerRings()[i].numPoints(); ++j)
+                {
+                    if (j != 0)
+                        std::cout << ", ";
+                    Point p = getPolygonN(index).getInnerRings()[i].getPointN(j);
+                    std::cout << p.getX() << " " << p.getY();
+                }
+
+                std::cout << ")";
+            }
+            std::cout << ")";
         }
         std::cout << ")";
     }

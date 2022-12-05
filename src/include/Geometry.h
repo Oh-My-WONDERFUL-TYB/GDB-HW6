@@ -1,3 +1,11 @@
+/***
+ * @Description:Update Some Require For Q1 and Q2
+ * @Author: jwimd chenjiewei@zju.edu.cn
+ * @Date: 2022-11-12 19:16:44
+ * @LastEditors: jwimd chenjiewei@zju.edu.cn
+ * @LastEditTime: 2022-12-05 23:22:00
+ * @FilePath: /GDB-HW6/src/include/Geometry.h
+ */
 #ifndef GEOMETRY_H_INCLUDED
 #define GEOMETRY_H_INCLUDED
 
@@ -5,13 +13,18 @@
 #include <iostream>
 #include <vector>
 
-namespace hw6 {
+namespace hw6
+{
 
-class Point;
-class LineString;
-class Polygon;
+  class Point;
+  class LineString;
+  class Polygon;
+  class MutiPoint;
+  class MutiLineString;
+  class MutiPolygon;
 
-class Envelope {
+  class Envelope
+  {
   private:
     double minX;
     double minY;
@@ -36,26 +49,29 @@ class Envelope {
 
     void draw() const;
 
-    void print() const {
-        std::cout << "Envelope( " << minX << " " << maxX << " " << minY << " "
-                  << maxY << ") ";
+    void print() const
+    {
+      std::cout << "Envelope( " << minX << " " << maxX << " " << minY << " "
+                << maxY << ") ";
     }
 
-    bool operator==(const Envelope &t1) const {
-        return (minX == t1.minX && minY == t1.minY && maxX == t1.maxX &&
-                maxY == t1.maxY);
+    bool operator==(const Envelope &t1) const
+    {
+      return (minX == t1.minX && minY == t1.minY && maxX == t1.maxX &&
+              maxY == t1.maxY);
     }
     bool operator!=(const Envelope &t1) const { return !(*this == t1); }
 
     bool contain(const Envelope &envelope) const;
     bool intersect(const Envelope &envelope) const;
     Envelope unionEnvelope(const Envelope &envelope) const;
-};
+  };
 
-/*
- * Geometry hierarchy
- */
-class Geometry {
+  /*
+   * Geometry hierarchy
+   */
+  class Geometry
+  {
   protected:
     Envelope envelope;
 
@@ -66,18 +82,24 @@ class Geometry {
     const Envelope &getEnvelope() const { return envelope; }
 
     virtual void constructEnvelope() = 0;
-    virtual double distance(const Geometry *geom) const {
-        return geom->distance(this);
+    virtual double distance(const Geometry *geom) const
+    {
+      return geom->distance(this);
     } // Euclidean distance
     virtual double distance(const Point *point) const = 0;
     virtual double distance(const LineString *line) const = 0;
     virtual double distance(const Polygon *polygon) const = 0;
+    virtual double distance(const MutiPoint *mutiPoint) const = 0;
+    virtual double distance(const MutiLineString *mutiLineString) const = 0;
+    virtual double distance(const MutiPolygon *mutiPolygon) const = 0;
+
     virtual bool intersects(const Envelope &rect) const = 0;
     virtual void draw() const = 0;
     virtual void print() const = 0;
-};
+  };
 
-class Point : public Geometry {
+  class Point : public Geometry
+  {
   private:
     double x;
     double y;
@@ -96,18 +118,23 @@ class Point : public Geometry {
     virtual double distance(const Point *point) const;
     virtual double distance(const LineString *line) const;
     virtual double distance(const Polygon *polygon) const;
+    virtual double distance(const MutiPoint *mutiPoint) const;
+    virtual double distance(const MutiLineString *mutiLineString) const;
+    virtual double distance(const MutiPolygon *mutiPolygon) const;
 
     // intersection test with the envelope for range query
     virtual bool intersects(const Envelope &rect) const;
 
     virtual void draw() const;
 
-    virtual void print() const {
-        std::cout << "Point(" << x << " " << y << ")";
+    virtual void print() const
+    {
+      std::cout << "Point(" << x << " " << y << ")";
     }
-};
+  };
 
-class LineString : public Geometry {
+  class LineString : public Geometry
+  {
   private:
     std::vector<Point> points;
 
@@ -124,21 +151,28 @@ class LineString : public Geometry {
     virtual void constructEnvelope();
 
     // Euclidean distance
-    virtual double distance(const Point *point) const {
-        return point->distance(this);
+    virtual double distance(const Point *point) const
+    {
+      return point->distance(this);
     }
     virtual double distance(const LineString *line) const;
     virtual double distance(const Polygon *polygon) const;
+    virtual double distance(const MutiPoint *mutiPoint) const;
+    virtual double distance(const MutiLineString *mutiLineString) const;
+    virtual double distance(const MutiPolygon *mutiPolygon) const;
 
     // intersection test with the envelope for range query
     virtual bool intersects(const Envelope &rect) const;
 
+    bool intersects(const LineString *line) const;
+
     virtual void draw() const;
 
     virtual void print() const;
-};
+  };
 
-class Polygon : public Geometry {
+  class Polygon : public Geometry
+  {
   private:
     LineString exteriorRing;
     std::vector<LineString> innerRings;
@@ -162,13 +196,18 @@ class Polygon : public Geometry {
     }
 
     // Euclidean distance
-    virtual double distance(const Point *point) const {
-        return point->distance(this);
+    virtual double distance(const Point *point) const
+    {
+      return point->distance(this);
     }
-    virtual double distance(const LineString *line) const {
-        return line->distance(this);
+    virtual double distance(const LineString *line) const
+    {
+      return line->distance(this);
     }
     virtual double distance(const Polygon *polygon) const;
+    virtual double distance(const MutiPoint *mutiPoint) const;
+    virtual double distance(const MutiLineString *mutiLineString) const;
+    virtual double distance(const MutiPolygon *mutiPolygon) const;
 
     // intersection test with the envelope for range query
     virtual bool intersects(const Envelope &rect) const;
@@ -176,7 +215,112 @@ class Polygon : public Geometry {
     virtual void draw() const;
 
     virtual void print() const;
-};
+  };
+
+  class MutiPoint : public Geometry
+  {
+  private:
+    std::vector<Point> points;
+
+  public:
+    MutiPoint() {}
+    MutiPoint(std::vector<Point> _points) : points(_points) { constructEnvelope(); }
+    virtual ~MutiPoint() {}
+
+    size_t numPoints() const { return points.size(); }
+    Point getStartPoint() const { return points.front(); }
+    Point getEndPoint() const { return points.back(); }
+    Point getPointN(size_t n) const { return points[n]; }
+
+    virtual void constructEnvelope();
+
+    // Euclidean distance
+    virtual double distance(const Point *point) const { return point->distance(this); }
+    virtual double distance(const LineString *line) const { return line->distance(this); }
+    virtual double distance(const Polygon *polygon) const { return polygon->distance(this); }
+    virtual double distance(const MutiPoint *mutiPoint) const;
+    virtual double distance(const MutiLineString *mutiLineString) const;
+    virtual double distance(const MutiPolygon *mutiPolygon) const;
+
+    // intersection test with the envelope for range query
+    virtual bool intersects(const Envelope &rect) const;
+
+    virtual std::vector<Point> spilt() const { return points; }
+
+    virtual void draw() const;
+
+    virtual void print() const;
+  };
+
+  class MutiLineString : public Geometry
+  {
+  private:
+    std::vector<LineString> lineStrings;
+
+  public:
+    MutiLineString() {}
+    MutiLineString(std::vector<LineString> _lineStrings) : lineStrings(_lineStrings) { constructEnvelope(); }
+    virtual ~MutiLineString() {}
+
+    size_t numLineStrings() const { return lineStrings.size(); }
+    LineString getStartLineString() const { return lineStrings.front(); }
+    LineString getEndLineString() const { return lineStrings.back(); }
+    LineString getLineStringN(size_t n) const { return lineStrings[n]; }
+
+    virtual void constructEnvelope();
+
+    // Euclidean distance
+    virtual double distance(const Point *point) const { return point->distance(this); }
+    virtual double distance(const LineString *line) const { return line->distance(this); }
+    virtual double distance(const Polygon *polygon) const { return polygon->distance(this); }
+    virtual double distance(const MutiPoint *mutiPoint) const { return mutiPoint->distance(this); }
+    virtual double distance(const MutiLineString *mutiLineString) const;
+    virtual double distance(const MutiPolygon *mutiPolygon) const;
+
+    // intersection test with the envelope for range query
+    virtual bool intersects(const Envelope &rect) const;
+
+    virtual std::vector<LineString> spilt() const { return lineStrings; }
+
+    virtual void draw() const;
+
+    virtual void print() const;
+  };
+
+  class MutiPolygon : public Geometry
+  {
+  private:
+    std::vector<Polygon> polygons;
+
+  public:
+    MutiPolygon() {}
+    MutiPolygon(std::vector<Polygon> _polygons) : polygons(_polygons) { constructEnvelope(); }
+    virtual ~MutiPolygon() {}
+
+    size_t numPolygons() const { return polygons.size(); }
+    Polygon getStartPolygon() const { return polygons.front(); }
+    Polygon getEndPolygon() const { return polygons.back(); }
+    Polygon getPolygonN(size_t n) const { return polygons[n]; }
+
+    virtual void constructEnvelope();
+
+    // Euclidean distance
+    virtual double distance(const Point *point) const { return point->distance(this); }
+    virtual double distance(const LineString *line) const { return line->distance(this); }
+    virtual double distance(const Polygon *polygon) const { return polygon->distance(this); }
+    virtual double distance(const MutiPoint *mutiPoint) const { return mutiPoint->distance(this); }
+    virtual double distance(const MutiLineString *mutiLineString) const { return mutiLineString->distance(this); }
+    virtual double distance(const MutiPolygon *mutiPolygon) const;
+
+    // intersection test with the envelope for range query
+    virtual bool intersects(const Envelope &rect) const;
+
+    virtual std::vector<Polygon> spilt() const { return polygons; }
+
+    virtual void draw() const;
+
+    virtual void print() const;
+  };
 
 } // namespace hw6
 
