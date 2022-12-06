@@ -1,6 +1,0 @@
-/home/jwimd/Study/Geospatial_Database/Homework/hw6/GDB-HW6/build/CMakeFiles/rebuild_cache.dir
-/home/jwimd/Study/Geospatial_Database/Homework/hw6/GDB-HW6/build/CMakeFiles/edit_cache.dir
-/home/jwimd/Study/Geospatial_Database/Homework/hw6/GDB-HW6/build/CMakeFiles/hw6.dir
-/home/jwimd/Study/Geospatial_Database/Homework/hw6/GDB-HW6/build/shapelib/CMakeFiles/rebuild_cache.dir
-/home/jwimd/Study/Geospatial_Database/Homework/hw6/GDB-HW6/build/shapelib/CMakeFiles/edit_cache.dir
-/home/jwimd/Study/Geospatial_Database/Homework/hw6/GDB-HW6/build/shapelib/CMakeFiles/shape.dir

@@ -125,6 +125,8 @@ namespace hw6
     // intersection test with the envelope for range query
     virtual bool intersects(const Envelope &rect) const;
 
+    
+
     virtual void draw() const;
 
     virtual void print() const
@@ -211,6 +213,8 @@ namespace hw6
 
     // intersection test with the envelope for range query
     virtual bool intersects(const Envelope &rect) const;
+
+    virtual bool contains(const Point *point) const;
 
     virtual void draw() const;
 

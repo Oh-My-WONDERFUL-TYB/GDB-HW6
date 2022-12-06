@@ -26,25 +26,58 @@ namespace hw6
         return x >= minX && x <= maxX && y >= minY && y <= maxY;
     }
 
+    /***
+     * @Description: Calculate evenlope contain
+     * @Author: jwimd chenjiewei@zju.edu.cn
+     * @msg: None
+     * @param {Envelope} &envelope
+     * @return {*}
+     */
     bool Envelope::contain(const Envelope &envelope) const
     {
-        // Task ����Envelope�Ƿ�������?
-        // TODO
-        return false;
+        return (minX <= envelope.getMinX() && minY <= envelope.getMinY() && maxX >= envelope.getMaxX() && maxY >= envelope.getMaxY());
     }
 
+    /***
+     * @Description: Calculate evenlope intersect
+     * @Author: jwimd chenjiewei@zju.edu.cn
+     * @msg: None
+     * @param {Envelope} &envelope
+     * @return {*}
+     */
     bool Envelope::intersect(const Envelope &envelope) const
     {
-        // Task ����Envelope�Ƿ��ཻ
-        // TODO
+        if (this->contain(envelope.getMinX(), envelope.getMinY()))
+            return true;
+        if (this->contain(envelope.getMinX(), envelope.getMaxY()))
+            return true;
+        if (this->contain(envelope.getMaxX(), envelope.getMinY()))
+            return true;
+        if (this->contain(envelope.getMaxX(), envelope.getMaxY()))
+            return true;
+
+        if (envelope.contain(this->getMinX(), this->getMinY()))
+            return true;
+        if (envelope.contain(this->getMinX(), this->getMaxY()))
+            return true;
+        if (envelope.contain(this->getMaxX(), this->getMinY()))
+            return true;
+        if (envelope.contain(this->getMaxX(), this->getMaxY()))
+            return true;
+
         return false;
     }
 
+    /***
+     * @Description: Calculate evenlope UNION
+     * @Author: jwimd chenjiewei@zju.edu.cn
+     * @msg: None
+     * @param {Envelope} &envelope
+     * @return {*}
+     */
     Envelope Envelope::unionEnvelope(const Envelope &envelope) const
     {
-        // Task �ϲ�����Envelope����һ���µ�Envelope
-        // TODO
-        return Envelope();
+        return Envelope(std::min(this->minX, envelope.getMinX()), std::max(this->maxX, envelope.getMaxX()), std::min(this->minY, envelope.getMinY()), std::max(this->maxY, envelope.getMaxY()));
     }
 
     void Envelope::draw() const
@@ -70,7 +103,7 @@ namespace hw6
     }
 
     /***
-     * @Description: ������߾������
+     * @Description: Distance between line and point
      * @Author: jwimd chenjiewei@zju.edu.cn
      * @msg: None
      * @param {LineString} *line
@@ -106,7 +139,7 @@ namespace hw6
     }
 
     /***
-     * @Description: ��������ξ������
+     * @Description: Distance between point and polygon
      * @Author: jwimd chenjiewei@zju.edu.cn
      * @msg: None
      * @param {Polygon} *polygon
@@ -116,8 +149,6 @@ namespace hw6
     {
         LineString line = polygon->getExteriorRing();
         size_t n = line.numPoints();
-
-        //�����Ƿ����ڻ��ڲ�
 
         std::vector<LineString> innerRings = polygon->getInnerRings();
 
@@ -136,23 +167,9 @@ namespace hw6
             }
         }
 
-        bool inPolygon = false;
-        // Task whether Point P(x, y) is within Polygon (less than 15 lines)
+        double mindist = 0.0;
 
-        for (size_t i = 0; i < line.numPoints() - 1; ++i)
-        {
-            double x1 = line.getPointN(i).getX();
-            double y1 = line.getPointN(i).getY();
-            double x2 = line.getPointN(i + 1).getX();
-            double y2 = line.getPointN(i + 1).getY();
-
-            if ((x1 <= x || x2 <= x) &&
-                ((y1 >= y && y2 <= y && (x1 - x2) / (y1 - y2) * (y - y2) + x2 <= x) || (y1 <= y && y2 >= y && (x1 - x2) / (y1 - y2) * (y - y2) + x2 <= x)))
-                inPolygon = !inPolygon;
-        }
-
-        double mindist = 0;
-        if (!inPolygon)
+        if (!polygon->contains(this))
             mindist = this->distance(&line);
         return mindist;
     }
@@ -491,7 +508,7 @@ namespace hw6
     }
 
     /***
-     * @Description: Intersection between LineString
+     * @Description: Intersection between LineString(Update vertice method)
      * @Author: jwimd chenjiewei@zju.edu.cn
      * @msg: None
      * @param {LineString} *line
@@ -501,58 +518,30 @@ namespace hw6
     {
         for (size_t i = 0; i < line->numPoints() - 1; ++i)
         {
-            double x1_l2, y1_l2, x2_l2, y2_l2;
-            if (line->getPointN(i).getX() <= line->getPointN(i + 1).getX())
-            {
-                x1_l2 = line->getPointN(i).getX();
-                y1_l2 = line->getPointN(i).getY();
-                x2_l2 = line->getPointN(i + 1).getX();
-                y2_l2 = line->getPointN(i + 1).getY();
-            }
-            else
-            {
-                x1_l2 = line->getPointN(i + 1).getX();
-                y1_l2 = line->getPointN(i + 1).getY();
-                x2_l2 = line->getPointN(i).getX();
-                y2_l2 = line->getPointN(i).getY();
-            }
+            double Ax, Ay, Bx, By;
+            Ax = line->getPointN(i).getX();
+            Ay = line->getPointN(i).getY();
+            Bx = line->getPointN(i + 1).getX();
+            By = line->getPointN(i + 1).getY();
 
             for (size_t i = 0; i < this->numPoints() - 1; ++i)
             {
-                double x1_l1, y1_l1, x2_l1, y2_l1;
-                if (this->getPointN(i).getX() <= this->getPointN(i + 1).getX())
-                {
-                    x1_l1 = this->getPointN(i).getX();
-                    y1_l1 = this->getPointN(i).getY();
-                    x2_l1 = this->getPointN(i + 1).getX();
-                    y2_l1 = this->getPointN(i + 1).getY();
-                }
-                else
-                {
-                    x1_l1 = this->getPointN(i + 1).getX();
-                    y1_l1 = this->getPointN(i + 1).getY();
-                    x2_l1 = this->getPointN(i).getX();
-                    y2_l1 = this->getPointN(i).getY();
-                }
+                double Cx, Cy, Dx, Dy;
+                Cx = this->getPointN(i).getX();
+                Cy = this->getPointN(i).getY();
+                Dx = this->getPointN(i + 1).getX();
+                Dy = this->getPointN(i + 1).getY();
 
-                double k_1 = (y2_l1 - y1_l1) / (x2_l1 - x1_l1);
-                double k_2 = (y2_l2 - y1_l2) / (x2_l2 - x1_l2);
+                if (std::max(Cx, Dx) < std::min(Ax, Bx) || std::max(Cy, Dy) < std::min(Ay, By) ||
+                    std::max(Ax, Bx) < std::min(Cx, Dx) || std::max(Ay, By) < std::min(Cy, Dy))
+                    continue;
 
-                double b_1 = y1_l1 - k_1 * x1_l1;
-                double b_2 = y1_l2 - k_2 * x1_l2;
+                double z1 = glm::normalize(glm::cross(glm::vec3(Cx - Ax, Cy - Ay, 0.0), glm::vec3(Dx - Cx, Dy - Cy, 0.0))).z;
+                double z2 = glm::normalize(glm::cross(glm::vec3(Cx - Bx, Cy - By, 0.0), glm::vec3(Dx - Cx, Dy - Cy, 0.0))).z;
+                double z3 = glm::normalize(glm::cross(glm::vec3(Ax - Cx, Ay - Cy, 0.0), glm::vec3(Bx - Ax, By - Ay, 0.0))).z;
+                double z4 = glm::normalize(glm::cross(glm::vec3(Ax - Dx, Ay - Dy, 0.0), glm::vec3(Bx - Ax, By - Ay, 0.0))).z;
 
-                if (k_1 == k_2)
-                {
-                    if (b_1 == b_2)
-                        return true;
-                    else
-                        continue;
-                }
-
-                double x = (b_2 - b_1) / (k_1 - k_2);
-                double y = k_1 * x + b_1;
-
-                if (x1_l1 <= x && x2_l1 >= x && x1_l2 <= x && x2_l2 >= x)
+                if ((z1 + z2 == 0 || z1 == 0 || z2 == 0) && (z3 + z4 == 0 || z3 == 0 || z4 == 0))
                     return true;
             }
         }
@@ -665,10 +654,127 @@ namespace hw6
         return mindst;
     }
 
+    /***
+     * @Description: Intersection between Evenlope and Polygon(Version without considering innerRing)
+     * @Author: jwimd chenjiewei@zju.edu.cn
+     * @msg: None
+     * @param {Envelope} &rect
+     * @return {*}
+     */
     bool Polygon::intersects(const Envelope &rect) const
     {
-        // TODO
-        return true;
+        // point inside
+        for (size_t i = 0; i < getExteriorRing().numPoints(); ++i)
+            if (rect.contain(getExteriorRing().getPointN(i).getX(), getExteriorRing().getPointN(i).getY()))
+                return true;
+
+        std::vector<Point> points;
+        points.push_back(Point(rect.getMinX(), rect.getMinY()));
+        points.push_back(Point(rect.getMaxX(), rect.getMinY()));
+        points.push_back(Point(rect.getMaxX(), rect.getMaxY()));
+        points.push_back(Point(rect.getMinX(), rect.getMaxY()));
+
+        for (size_t i = 0; i < points.size(); ++i)
+        {
+            if (contains(&points[i]))
+                return true;
+        }
+
+        // line intersect
+
+        LineString boundary(points);
+        if (getExteriorRing().intersects(&boundary))
+            return true;
+
+        return false;
+    }
+
+    /***
+     * @Description: Update vertice method to calculate
+     * @Author: jwimd chenjiewei@zju.edu.cn
+     * @msg: None
+     * @param {Point} *point
+     * @return {*}
+     */
+    bool Polygon::contains(const Point *point) const
+    {
+        // Task whether Point P(x, y) is within Polygon
+        LineString line = getExteriorRing();
+        size_t n = line.numPoints();
+
+        double x = point->getX();
+        double y = point->getY();
+
+        bool inPolygon = false;
+
+        for (size_t i = 0; i < line.numPoints() - 1; ++i)
+        {
+            double Cx = line.getPointN(i).getX();
+            double Cy = line.getPointN(i).getY();
+            double Dx = line.getPointN(i + 1).getX();
+            double Dy = line.getPointN(i + 1).getY();
+
+            double Ax = x;
+            double Ay = y;
+            double Bx = std::max(Cx, Dx);
+            double By = y;
+
+            if (Cx >= Ax && Cy == Ay)
+                inPolygon = !inPolygon;
+
+            if (Bx < x)
+                continue;
+
+            if (std::max(Cx, Dx) < std::min(Ax, Bx) || std::max(Cy, Dy) < std::min(Ay, By) ||
+                std::max(Ax, Bx) < std::min(Cx, Dx) || std::max(Ay, By) < std::min(Cy, Dy))
+                continue;
+
+            double z1 = glm::normalize(glm::cross(glm::vec3(Cx - Ax, Cy - Ay, 0.0), glm::vec3(Dx - Cx, Dy - Cy, 0.0))).z;
+            double z2 = glm::normalize(glm::cross(glm::vec3(Cx - Bx, Cy - By, 0.0), glm::vec3(Dx - Cx, Dy - Cy, 0.0))).z;
+            double z3 = glm::normalize(glm::cross(glm::vec3(Ax - Cx, Ay - Cy, 0.0), glm::vec3(Bx - Ax, By - Ay, 0.0))).z;
+            double z4 = glm::normalize(glm::cross(glm::vec3(Ax - Dx, Ay - Dy, 0.0), glm::vec3(Bx - Ax, By - Ay, 0.0))).z;
+
+            if (z1 + z2 == 0 && z1 != z2 && z3 + z4 == 0 && z3 != z4)
+                inPolygon = !inPolygon;
+        }
+
+        std::vector<LineString> innerRings = getInnerRings();
+
+        for (std::vector<LineString>::iterator ring = innerRings.begin(); ring < innerRings.end(); ++ring)
+        {
+            for (size_t i = 0; i < ring->numPoints() - 1; ++i)
+            {
+                double Cx = line.getPointN(i).getX();
+                double Cy = line.getPointN(i).getY();
+                double Dx = line.getPointN(i + 1).getX();
+                double Dy = line.getPointN(i + 1).getY();
+
+                double Ax = x;
+                double Ay = y;
+                double Bx = std::max(Cx, Dx);
+                double By = y;
+
+                if (Cx >= Ax && Cy == Ay)
+                    inPolygon = !inPolygon;
+
+                if (Bx < x)
+                    continue;
+
+                if (std::max(Cx, Dx) < std::min(Ax, Bx) || std::max(Cy, Dy) < std::min(Ay, By) ||
+                    std::max(Ax, Bx) < std::min(Cx, Dx) || std::max(Ay, By) < std::min(Cy, Dy))
+                    continue;
+
+                double z1 = glm::normalize(glm::cross(glm::vec3(Cx - Ax, Cy - Ay, 0.0), glm::vec3(Dx - Cx, Dy - Cy, 0.0))).z;
+                double z2 = glm::normalize(glm::cross(glm::vec3(Cx - Bx, Cy - By, 0.0), glm::vec3(Dx - Cx, Dy - Cy, 0.0))).z;
+                double z3 = glm::normalize(glm::cross(glm::vec3(Ax - Cx, Ay - Cy, 0.0), glm::vec3(Bx - Ax, By - Ay, 0.0))).z;
+                double z4 = glm::normalize(glm::cross(glm::vec3(Ax - Dx, Ay - Dy, 0.0), glm::vec3(Bx - Ax, By - Ay, 0.0))).z;
+
+                if (z1 + z2 == 0 && z1 != z2 && z3 + z4 == 0 && z3 != z4)
+                    inPolygon = !inPolygon;
+            }
+        }
+
+        return inPolygon;
     }
 
     /***
