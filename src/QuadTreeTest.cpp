@@ -36,7 +36,7 @@ namespace hw6
         for (int cap = 70; cap <= 200; cap += 10)
         {
             QuadTree *qtree = new QuadTree();
-            // Task �����Ĳ���������Ĳ����Ľڵ���Ŀ�͸߶�
+            // Task ??????????????????????????????
             // TODO
 
             clock_t start_time = clock();
@@ -80,7 +80,7 @@ namespace hw6
         cout << "*********************Start*********************" << endl;
         if (t == TEST1)
         {
-            cout << "����1: Envelope Contain, Intersect, and Union" << endl;
+            cout << "????1: Envelope Contain, Intersect, and Union" << endl;
 
             int failedCase = 0;
             Envelope e1(-1, 1, -1, 1);
@@ -161,7 +161,7 @@ namespace hw6
         }
         else if (t == TEST2)
         {
-            cout << "����2: Distance between Point and LineString" << endl;
+            cout << "????2: Distance between Point and LineString" << endl;
 
             vector<Point> points;
             points.push_back(Point(0, 0));
@@ -200,7 +200,7 @@ namespace hw6
         }
         else if (t == TEST3)
         {
-            cout << "����3: Distance between Point and Polygon" << endl;
+            cout << "????3: Distance between Point and Polygon" << endl;
 
             vector<Point> points;
             points.push_back(Point(5, 0));
@@ -248,7 +248,7 @@ namespace hw6
         }
         else if (t == TEST4)
         {
-            cout << "����4: QuadTree Construction" << endl;
+            cout << "????4: QuadTree Construction" << endl;
             int ncase, cct;
             ncase = cct = 2;
             QuadTree qtree;
@@ -315,7 +315,7 @@ namespace hw6
         }
         else if (t == TEST8)
         {
-            cout << "����8: QuadTreeAnalysis" << endl;
+            cout << "????8: QuadTreeAnalysis" << endl;
             analyse();
         }
 

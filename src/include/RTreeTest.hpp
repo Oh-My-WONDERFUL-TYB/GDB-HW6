@@ -2,9 +2,7 @@
 #define RTREE_TEST_H_INCLUDED
 
 #include "Common.h"
-#include "RTreeSrc.h"
-
-#include "CMakeIn.h"
+#include "RTreeSrc.hpp"
 
 using namespace hw6;
 
@@ -24,7 +22,7 @@ template <uint8_t M> void RTree<M>::test(int t) {
 
     std::cout << "*********************Start*********************" << std::endl;
     if (t == TEST1) {
-        std::cout << "²âÊÔ1: Envelope Contain, Intersect, and Union" << endl;
+        std::cout << "ï¿½ï¿½ï¿½ï¿½1: Envelope Contain, Intersect, and Union" << endl;
 
         int failedCase = 0;
         Envelope e1(-1, 1, -1, 1);
@@ -94,7 +92,7 @@ template <uint8_t M> void RTree<M>::test(int t) {
         cout << "Envelope Union: " << tests.size() * 2 - failedCase << " / "
              << tests.size() * 2 << " tests are passed" << endl;
     } else if (t == TEST2) {
-        cout << "²âÊÔ2: Distance between Point and LineString" << endl;
+        cout << "ï¿½ï¿½ï¿½ï¿½2: Distance between Point and LineString" << endl;
 
         vector<Point> points;
         points.push_back(Point(0, 0));
@@ -129,7 +127,7 @@ template <uint8_t M> void RTree<M>::test(int t) {
              << points.size() - failedCase << " / " << points.size()
              << " tests are passed" << endl;
     } else if (t == TEST3) {
-        cout << "²âÊÔ3: Distance between Point and Polygon" << endl;
+        cout << "ï¿½ï¿½ï¿½ï¿½3: Distance between Point and Polygon" << endl;
 
         vector<Point> points;
         points.push_back(Point(5, 0));
@@ -173,12 +171,12 @@ template <uint8_t M> void RTree<M>::test(int t) {
              << points.size() - failedCase << " / " << points.size()
              << " tests are passed" << endl;
     } else if (t == TEST4) {
-        cout << "²âÊÔ4: RTree Construction" << endl;
+        cout << "ï¿½ï¿½ï¿½ï¿½4: RTree Construction" << endl;
         int ncase, cct;
         ncase = cct = 2;
 
         RTree<8> rtree;
-        vector<Geometry *> geom = readGeom(PROJ_SRC_DIR "/data/station");
+        vector<Geometry *> geom = readGeom("../data/station");
         vector<Feature> features;
 
         for (size_t i = 0; i < geom.size(); ++i)
@@ -205,7 +203,7 @@ template <uint8_t M> void RTree<M>::test(int t) {
             delete geom[i];
         geom.clear();
 
-        vector<Geometry *> geom2 = readGeom(PROJ_SRC_DIR "/data/highway");
+        vector<Geometry *> geom2 = readGeom("./data/highway");
         vector<Feature> features2;
         RTree<8> rtree2;
 
@@ -236,7 +234,7 @@ template <uint8_t M> void RTree<M>::test(int t) {
         //cout << "RTree Construction: " << cct << " / " << ncase
         //     << " tests are passed" << endl;
     } else if (t == TEST8) {
-        cout << "²âÊÔ8: RTreeAnalysis" << endl;
+        cout << "ï¿½ï¿½ï¿½ï¿½8: RTreeAnalysis" << endl;
         analyse();
     }
 
@@ -245,7 +243,7 @@ template <uint8_t M> void RTree<M>::test(int t) {
 
 template <uint8_t I, uint8_t Last, uint8_t Step>
 void forConstCapAnalyseRTree(const std::vector<Feature> &features) {
-    if constexpr (I <= Last) {
+    if  constexpr(I <= Last) {
         RTree<I> rtree;
         rtree.constructTree(features);
 
@@ -259,8 +257,8 @@ template <uint8_t M> void RTree<M>::analyse() {
     using namespace std;
 
     vector<Feature> features;
-    vector<Geometry *> geom = readGeom(PROJ_SRC_DIR "/data/taxi");
-    vector<string> name = readName(PROJ_SRC_DIR "/data/taxi");
+    vector<Geometry *> geom = readGeom("../data/taxi");
+    vector<string> name = readName("../data/taxi");
 
     features.clear();
     features.reserve(geom.size());

@@ -1,128 +1,150 @@
 #include "QuadTree.h"
 #include <set>
 
-namespace hw6 {
+namespace hw6
+{
 
-/*
- * QuadNode
- */
-void QuadNode::split(size_t capacity) {
-    for (int i = 0; i < 4; ++i) {
-        delete children[i];
-        children[i] = nullptr;
-    }
-
-    // Task construction
-    // TODO
-}
-
-void QuadNode::countNode(int &interiorNum, int &leafNum) {
-    if (isLeafNode()) {
-        ++leafNum;
-    } else {
-        ++interiorNum;
+    /*
+     * QuadNode
+     */
+    void QuadNode::split(size_t capacity)
+    {
         for (int i = 0; i < 4; ++i)
-            children[i]->countNode(interiorNum, leafNum);
-    }
-}
+        {
+            delete children[i];
+            children[i] = nullptr;
+        }
 
-int QuadNode::countHeight(int height) {
-    ++height;
-    if (!isLeafNode()) {
-        int cur = height;
-        for (int i = 0; i < 4; ++i) {
-            height = std::max(height, children[i]->countHeight(cur));
+        // Task construction
+        // TODO
+    }
+
+    void QuadNode::countNode(int &interiorNum, int &leafNum)
+    {
+        if (isLeafNode())
+        {
+            ++leafNum;
+        }
+        else
+        {
+            ++interiorNum;
+            for (int i = 0; i < 4; ++i)
+                children[i]->countNode(interiorNum, leafNum);
         }
     }
-    return height;
-}
 
-void QuadNode::rangeQuery(const Envelope &rect,
-                          std::vector<Feature> &features) {
-    if (!bbox.intersect(rect))
-        return;
-
-    // Task range query
-    // TODO
-}
-
-QuadNode *QuadNode::pointInLeafNode(double x, double y) {
-    // Task NN query
-    // TODO
-
-    return nullptr;
-}
-
-void QuadNode::draw() {
-    if (isLeafNode()) {
-        bbox.draw();
-    } else {
-        for (int i = 0; i < 4; ++i)
-            children[i]->draw();
+    int QuadNode::countHeight(int height)
+    {
+        ++height;
+        if (!isLeafNode())
+        {
+            int cur = height;
+            for (int i = 0; i < 4; ++i)
+            {
+                height = std::max(height, children[i]->countHeight(cur));
+            }
+        }
+        return height;
     }
-}
 
-/*
- * QuadTree
- */
-bool QuadTree::constructTree(const std::vector<Feature> &features) {
-    if (features.empty())
-        return false;
+    void QuadNode::rangeQuery(const Envelope &rect,
+                              std::vector<Feature> &features)
+    {
+        if (!bbox.intersect(rect))
+            return;
 
-    // Task construction
-    // TODO
+        // Task range query
+        // TODO
+    }
 
-    bbox = Envelope(-74.1, -73.8, 40.6, 40.8); // ×¢Òâ´ËÐÐ´úÂëÐèÒª¸üÐÂÎªfeaturesµÄ°üÎ§ºÐ£¬»ò¸ù½ÚµãµÄ°üÎ§ºÐ
+    QuadNode *QuadNode::pointInLeafNode(double x, double y)
+    {
+        // Task NN query
+        // TODO
 
-    return true;
-}
+        return nullptr;
+    }
 
-void QuadTree::countNode(int &interiorNum, int &leafNum) {
-    interiorNum = 0;
-    leafNum = 0;
-    if (root)
-        root->countNode(interiorNum, leafNum);
-}
+    void QuadNode::draw()
+    {
+        if (isLeafNode())
+        {
+            bbox.draw();
+        }
+        else
+        {
+            for (int i = 0; i < 4; ++i)
+                children[i]->draw();
+        }
+    }
 
-void QuadTree::countHeight(int &height) {
-    height = 0;
-    if (root)
-        height = root->countHeight(0);
-}
+    /*
+     * QuadTree
+     */
+    bool QuadTree::constructTree(const std::vector<Feature> &features)
+    {
+        if (features.empty())
+            return false;
 
-void QuadTree::rangeQuery(const Envelope &rect,
-                          std::vector<Feature> &features) {
-    features.clear();
+        // Task construction
+        // TODO
 
-    // Task range query
-    // TODO
+        bbox = Envelope(-74.1, -73.8, 40.6, 40.8); // ×¢ï¿½ï¿½ï¿½ï¿½Ð´ï¿½ï¿½ï¿½ï¿½ï¿½Òªï¿½ï¿½ï¿½ï¿½Îªfeaturesï¿½Ä°ï¿½Î§ï¿½Ð£ï¿½ï¿½ï¿½ï¿½ï¿½Úµï¿½Ä°ï¿½Î§ï¿½ï¿½
 
-    // filter step (Ñ¡Ôñ²éÑ¯ÇøÓòÓë¼¸ºÎ¶ÔÏó°üÎ§ºÐÏà½»µÄ¼¸ºÎ¶ÔÏó)
+        return true;
+    }
 
-    // ×¢ÒâËÄ²æÊ÷ÇøÓò²éÑ¯½ö·µ»ØºòÑ¡¼¯£¬¾«Á¶²½ÔÚhw6µÄrangeQueryÖÐÍê³É
-}
+    void QuadTree::countNode(int &interiorNum, int &leafNum)
+    {
+        interiorNum = 0;
+        leafNum = 0;
+        if (root)
+            root->countNode(interiorNum, leafNum);
+    }
 
-bool QuadTree::NNQuery(double x, double y, std::vector<Feature> &features) {
-    if (!root || !(root->getEnvelope().contain(x, y)))
-        return false;
+    void QuadTree::countHeight(int &height)
+    {
+        height = 0;
+        if (root)
+            height = root->countHeight(0);
+    }
 
-    // Task NN query
-    // TODO
+    void QuadTree::rangeQuery(const Envelope &rect,
+                              std::vector<Feature> &features)
+    {
+        features.clear();
 
-    // filter step
-    // (Ê¹ÓÃmaxDistance2Envelopeº¯Êý£¬»ñµÃ²éÑ¯µãµ½¼¸ºÎ¶ÔÏó°üÎ§ºÐµÄ×î¶ÌµÄ×î´ó¾àÀë£¬È»ºóÇøÓò²éÑ¯»ñµÃºòÑ¡¼¯)
+        // Task range query
+        // TODO
 
-    const Envelope &envelope = root->getEnvelope();
-    double minDist = std::max(envelope.getWidth(), envelope.getHeight());
+        // filter step (Ñ¡ï¿½ï¿½ï¿½Ñ¯ï¿½ï¿½ï¿½ï¿½ï¿½ë¼¸ï¿½Î¶ï¿½ï¿½ï¿½ï¿½Î§ï¿½ï¿½ï¿½à½»ï¿½Ä¼ï¿½ï¿½Î¶ï¿½ï¿½ï¿½)
 
-    // ×¢ÒâËÄ²æÊ÷ÁÚ½ü²éÑ¯½ö·µ»ØºòÑ¡¼¯£¬¾«Á¶²½ÔÚhw6µÄNNQueryÖÐÍê³É
+        // ×¢ï¿½ï¿½ï¿½Ä²ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ñ¯ï¿½ï¿½ï¿½ï¿½ï¿½Øºï¿½Ñ¡ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½hw6ï¿½ï¿½rangeQueryï¿½ï¿½ï¿½ï¿½ï¿½
+    }
 
-    return true;
-}
+    bool QuadTree::NNQuery(double x, double y, std::vector<Feature> &features)
+    {
+        if (!root || !(root->getEnvelope().contain(x, y)))
+            return false;
 
-void QuadTree::draw() {
-    if (root)
-        root->draw();
-}
+        // Task NN query
+        // TODO
+
+        // filter step
+        // (Ê¹ï¿½ï¿½maxDistance2Envelopeï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ã²ï¿½Ñ¯ï¿½ãµ½ï¿½ï¿½ï¿½Î¶ï¿½ï¿½ï¿½ï¿½Î§ï¿½Ðµï¿½ï¿½ï¿½Ìµï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ë£¬È»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ñ¯ï¿½ï¿½Ãºï¿½Ñ¡ï¿½ï¿½)
+
+        const Envelope &envelope = root->getEnvelope();
+        double minDist = std::max(envelope.getWidth(), envelope.getHeight());
+
+        // ×¢ï¿½ï¿½ï¿½Ä²ï¿½ï¿½ï¿½ï¿½Ú½ï¿½ï¿½ï¿½Ñ¯ï¿½ï¿½ï¿½ï¿½ï¿½Øºï¿½Ñ¡ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½hw6ï¿½ï¿½NNQueryï¿½ï¿½ï¿½ï¿½ï¿½
+
+        return true;
+    }
+
+    void QuadTree::draw()
+    {
+        if (root)
+            root->draw();
+    }
 
 } // namespace hw6

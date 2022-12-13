@@ -3,11 +3,13 @@
 
 #include "Geometry.h"
 
-#include<cmath>
+#include <cmath>
 
-namespace hw6 {
+namespace hw6
+{
 
-class Feature {
+  class Feature
+  {
   private:
     std::string name;
     Geometry *geom;
@@ -15,45 +17,57 @@ class Feature {
   public:
     Feature() : geom(NULL) {}
     Feature(const std::string &name, Geometry *geom) : name(name), geom(geom) {}
+    ~Feature()
+    {
+      geom = nullptr;
+    }
 
-    const std::string &getName() const { return name; }
+    const std::string &getName() const
+    {
+      return name;
+    }
 
     const Geometry *getGeom() const { return geom; }
 
     const Envelope &getEnvelope() const { return geom->getEnvelope(); }
 
-    double maxDistance2Envelope(double x, double y) const {
-        const Envelope &e = geom->getEnvelope();
-        double x1 = e.getMinX();
-        double y1 = e.getMinY();
-        double x2 = e.getMaxX();
-        double y2 = e.getMaxY();
+    double maxDistance2Envelope(double x, double y) const
+    {
+      const Envelope &e = geom->getEnvelope();
+      double x1 = e.getMinX();
+      double y1 = e.getMinY();
+      double x2 = e.getMaxX();
+      double y2 = e.getMaxY();
 
-        double d1 = sqrt((x - x1) * (x - x1) + (y - y1) * (y - y1));
-        double d2 = sqrt((x - x1) * (x - x1) + (y - y2) * (y - y2));
-        double d3 = sqrt((x - x2) * (x - x2) + (y - y1) * (y - y1));
-        double d4 = sqrt((x - x2) * (x - x2) + (y - y2) * (y - y2));
+      double d1 = sqrt((x - x1) * (x - x1) + (y - y1) * (y - y1));
+      double d2 = sqrt((x - x1) * (x - x1) + (y - y2) * (y - y2));
+      double d3 = sqrt((x - x2) * (x - x2) + (y - y1) * (y - y1));
+      double d4 = sqrt((x - x2) * (x - x2) + (y - y2) * (y - y2));
 
-        return std::max(std::max(d1, d2), std::max(d3, d4));
+      return std::max(std::max(d1, d2), std::max(d3, d4));
     }
 
-    double distance(double x, double y) const {
-        Point point(x, y);
-        return geom->distance(&point);
+    double distance(double x, double y) const
+    {
+      Point point(x, y);
+      return geom->distance(&point);
     }
 
-    void print() const {
-        std::cout << "Feature: " << name << " ";
-        geom->print();
+    void print() const
+    {
+      std::cout << "Feature: " << name << " ";
+      geom->print();
     }
 
-    void draw() const {
-        if (geom)
-            geom->draw();
+    void draw() const
+    {
+      if (geom)
+        geom->draw();
     }
-};
+  };
 
-class Tree {
+  class Tree
+  {
   protected:
     size_t capacity;
     Envelope bbox;
@@ -80,7 +94,7 @@ class Tree {
                          std::vector<Feature> &features) = 0;
 
     virtual void draw() = 0;
-};
+  };
 
 } // namespace hw6
 
