@@ -141,6 +141,22 @@ namespace hw6
         return true;
     }
 
+    std::vector<std::pair<Feature, Feature>> QuadTree::spatialJoin(Tree *tree, double distance)
+    {
+        QuadTree *qtree = dynamic_cast<QuadTree *>(tree); // father class pointer to child class pointer
+        std::vector<std::pair<Feature, Feature>> f;
+
+        // TODO
+
+        // 返回一个vector，这个vector的元素是一个Feature对，这个对满足两元素距离可能小于distance
+        // 判断方法是对this的每一个根节点建立一个Envelope——
+        // Envelope rect(getFeature(i)->getEnvelope().getMinX() - distance, getFeature(i)->getEnvelope().getMaxX() + distance, getFeature(i)->getEnvelope().getMinY() - distance, getFeature(i)->getEnvelope().getMaxY() + distance);
+        // 然后用这个rect去和qtree做rangequery，返回的features和做查询的feature形成一个pair然后返回
+        // 可以看r树的实现和最终的输出
+
+        return f;
+    }
+
     void QuadTree::draw()
     {
         if (root)

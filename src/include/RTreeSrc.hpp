@@ -164,18 +164,87 @@ namespace hw6
                 bbox.draw();
             }
             else
+            {
                 for (decltype(M) i = 0; i < childrenNum; ++i)
                     children[i]->draw();
+            }
         }
 
-        void rangeQuery(const Envelope &rect, std::vector<Feature> &features)
+        /***
+         * @Description: Range Query for Node(feature's evenlope)
+         * @Author: jwimd chenjiewei@zju.edu.cn
+         * @msg: None
+         * @param {Envelope} &rect
+         * @param {vector<Feature>} &features
+         * @return {*}
+         */
+        void rangeQuery(const Envelope &rect, std::vector<const Feature *> &features)
         {
-            // TODO
+            if (!getEnvelope().intersect(rect))
+                return;
+            if (isLeafNode())
+            {
+                for (size_t i = 0; i < getFeatureNum(); ++i)
+                {
+                    if (getFeature(i)->getEnvelope().intersect(rect))
+                        features.push_back(getFeature(i));
+                }
+            }
+            else
+            {
+                for (size_t i = 0; i < getChildNum(); ++i)
+                    getChild(i)->rangeQuery(rect, features);
+            }
         }
 
-        std::shared_ptr<RNode<M>> pointInLeafNode(double x, double y)
+        /***
+         * @Description: Find leaf for point or nullptr
+         * @Author: jwimd chenjiewei@zju.edu.cn
+         * @msg: None
+         * @param {double} x
+         * @param {double} y
+         * @param {double} &distance
+         * @return {*}
+         */
+        RNode<M> *pointInLeafNode(double x, double y)
         {
-            // TODO
+            if (isLeafNode())
+                return this;
+            else
+            {
+                for (size_t i = 0; i < getChildNum(); i++)
+                    if (getChild(i)->getEnvelope().contain(x, y))
+                        return getChild(i)->pointInLeafNode(x, y);
+            }
+            return nullptr;
+        }
+
+        /***
+         * @Description: Outer Loop for join
+         * @Author: jwimd chenjiewei@zju.edu.cn
+         * @msg: None
+         * @param {double} distance
+         * @param {Tree} *node
+         * @return {*}
+         */
+        void spatialJoin(double distance, RNode<M> *node, std::vector<std::pair<Feature, Feature>> &joinSet)
+        {
+            if (isLeafNode())
+            {
+                for (size_t i = 0; i < getFeatureNum(); ++i)
+                {
+                    std::vector<const Feature *> joinFeature;
+                    Envelope rect(getFeature(i)->getEnvelope().getMinX() - distance, getFeature(i)->getEnvelope().getMaxX() + distance, getFeature(i)->getEnvelope().getMinY() - distance, getFeature(i)->getEnvelope().getMaxY() + distance);
+
+                    node->rangeQuery(rect, joinFeature);
+
+                    for (size_t j = 0; j < joinFeature.size(); ++j)
+                        joinSet.push_back(std::make_pair(*getFeature(i), *joinFeature[j]));
+                }
+            }
+            else
+                for (size_t i = 0; i < getChildNum(); i++)
+                    getChild(i)->spatialJoin(distance, node, joinSet);
         }
 
         /***
@@ -184,7 +253,8 @@ namespace hw6
          * @msg: None
          * @return {*}
          */
-        std::vector<RNode<M> *> split()
+        std::vector<RNode<M> *>
+        split()
         {
             RNode<M> *L1 = nullptr;
             RNode<M> *L2 = nullptr;
@@ -223,34 +293,55 @@ namespace hw6
 
                 while (this->getFeatureNum())
                 {
-                    const Feature *_feature = popBackFeature();
+
                     Envelope env1 = L1->getEnvelope();
                     Envelope env2 = L2->getEnvelope();
-                    if (env1.unionEnvelope(_feature->getEnvelope()).getArea() > env2.unionEnvelope(_feature->getEnvelope()).getArea())
+                    if (L1->getFeatureNum() == size_t(m))
                     {
-                        if (L2->getFeatureNum() < size_t(m))
-                        {
-                            L2->setEnvelope(env2.unionEnvelope(_feature->getEnvelope()));
-                            L2->add(_feature);
-                        }
-                        else
-                        {
-                            L1->setEnvelope(env1.unionEnvelope(_feature->getEnvelope()));
-                            L1->add(_feature);
-                        }
+                        const Feature *_feature = popBackFeature();
+                        L2->setEnvelope(env2.unionEnvelope(_feature->getEnvelope()));
+                        L2->add(_feature);
+                    }
+                    else if (L2->getFeatureNum() == size_t(m))
+                    {
+                        const Feature *_feature = popBackFeature();
+                        L1->setEnvelope(env1.unionEnvelope(_feature->getEnvelope()));
+                        L1->add(_feature);
                     }
                     else
                     {
-                        if (L1->getFeatureNum() < size_t(m))
+                        const Feature *_feature = nullptr;
+                        size_t pick = -1;
+                        double max_difference = -1;
+                        int flag = -1;
+                        for (size_t i = 0; i < this->getFeatureNum(); i++)
+                        {
+                            _feature = this->getFeature(i);
+                            if (env1.unionEnvelope(_feature->getEnvelope()).getArea() - env2.unionEnvelope(_feature->getEnvelope()).getArea() > max_difference)
+                            {
+                                flag = 0;
+                                max_difference = env1.unionEnvelope(_feature->getEnvelope()).getArea() - env2.unionEnvelope(_feature->getEnvelope()).getArea();
+                                pick = i;
+                            }
+                            if (env2.unionEnvelope(_feature->getEnvelope()).getArea() - env1.unionEnvelope(_feature->getEnvelope()).getArea() > max_difference)
+                            {
+                                flag = 1;
+                                max_difference = env2.unionEnvelope(_feature->getEnvelope()).getArea() - env1.unionEnvelope(_feature->getEnvelope()).getArea();
+                                pick = i;
+                            }
+                        }
+                        _feature = this->getFeature(pick);
+                        if (flag == 1)
                         {
                             L1->setEnvelope(env1.unionEnvelope(_feature->getEnvelope()));
                             L1->add(_feature);
                         }
-                        else
+                        else if (flag == 0)
                         {
                             L2->setEnvelope(env2.unionEnvelope(_feature->getEnvelope()));
                             L2->add(_feature);
                         }
+                        this->remove(_feature);
                     }
                 }
             }
@@ -291,34 +382,55 @@ namespace hw6
 
                 while (this->getChildNum())
                 {
-                    RNode<M> *_child = popBackChild();
+
                     Envelope env1 = L1->getEnvelope();
                     Envelope env2 = L2->getEnvelope();
-                    if (env1.unionEnvelope(_child->getEnvelope()).getArea() > env2.unionEnvelope(_child->getEnvelope()).getArea())
+                    if (L1->getChildNum() == size_t(m))
                     {
-                        if (L2->getChildNum() < size_t(m))
-                        {
-                            L2->setEnvelope(env2.unionEnvelope(_child->getEnvelope()));
-                            L2->add(_child);
-                        }
-                        else
-                        {
-                            L1->setEnvelope(env1.unionEnvelope(_child->getEnvelope()));
-                            L1->add(_child);
-                        }
+                        RNode<M> *_child = popBackChild();
+                        L2->setEnvelope(env2.unionEnvelope(_child->getEnvelope()));
+                        L2->add(_child);
+                    }
+                    else if (L2->getChildNum() == size_t(m))
+                    {
+                        RNode<M> *_child = popBackChild();
+                        L1->setEnvelope(env1.unionEnvelope(_child->getEnvelope()));
+                        L1->add(_child);
                     }
                     else
                     {
-                        if (L1->getChildNum() < size_t(m))
+                        RNode<M> *_child = nullptr;
+                        size_t pick = -1;
+                        double max_difference = -1;
+                        int flag = -1;
+                        for (size_t i = 0; i < this->getChildNum(); i++)
+                        {
+                            _child = this->getChild(i);
+                            if (env1.unionEnvelope(_child->getEnvelope()).getArea() - env2.unionEnvelope(_child->getEnvelope()).getArea() > max_difference)
+                            {
+                                flag = 0;
+                                max_difference = env1.unionEnvelope(_child->getEnvelope()).getArea() - env2.unionEnvelope(_child->getEnvelope()).getArea();
+                                pick = i;
+                            }
+                            if (env2.unionEnvelope(_child->getEnvelope()).getArea() - env1.unionEnvelope(_child->getEnvelope()).getArea() > max_difference)
+                            {
+                                flag = 1;
+                                max_difference = env2.unionEnvelope(_child->getEnvelope()).getArea() - env1.unionEnvelope(_child->getEnvelope()).getArea();
+                                pick = i;
+                            }
+                        }
+                        _child = this->getChild(pick);
+                        if (flag == 1)
                         {
                             L1->setEnvelope(env1.unionEnvelope(_child->getEnvelope()));
                             L1->add(_child);
                         }
-                        else
+                        else if (flag == 0)
                         {
                             L2->setEnvelope(env2.unionEnvelope(_child->getEnvelope()));
                             L2->add(_child);
                         }
+                        this->remove(_child);
                     }
                 }
             }
@@ -334,7 +446,29 @@ namespace hw6
                 for (size_t i = 0; i < P->getChildNum(); i++)
                     P->setEnvelope(P->getEnvelope().unionEnvelope(P->getChild(i)->getEnvelope()));
 
+                RNode<M> *p = P->getParent();
+                RNode<M> *l = P;
+
+                while (p)
+                {
+                    p->setEnvelope(l->getEnvelope());
+                    for (size_t i = 0; i < p->getChildNum(); i++)
+                        p->setEnvelope(p->getEnvelope().unionEnvelope(p->getChild(i)->getEnvelope()));
+                    l = l->getParent();
+                    p = l->getParent();
+                }
+
                 P->add(L1);
+
+                p = P->getParent();
+                l = P;
+
+                while (p)
+                {
+                    p->setEnvelope(p->getEnvelope().unionEnvelope(l->getEnvelope()));
+                    l = l->getParent();
+                    p = l->getParent();
+                }
             }
 
             std::vector<RNode<M> *> ret;
@@ -367,6 +501,42 @@ namespace hw6
             root = nullptr;
         }
 
+        RNode<M> *getRoot() { return root; }
+
+        /***
+         * @Description: Check Geom Rule
+         * @Author: jwimd chenjiewei@zju.edu.cn
+         * @msg: None
+         * @param {RNode<M>} *node
+         * @return {*}
+         */
+        std::string
+        checkGeom(RNode<M> *node)
+        {
+            if (node->isLeafNode())
+            {
+                for (size_t i = 0; i < node->getFeatureNum(); ++i)
+                    if (!node->getEnvelope().contain(node->getFeature(i)->getEnvelope()))
+                        return "leaf dont contain feature\n";
+            }
+            else
+            {
+                for (size_t i = 0; i < node->getChildNum(); ++i)
+                    if (!node->getEnvelope().contain(node->getChild(i)->getEnvelope()))
+                        return "inner dont contain child\n";
+                for (size_t i = 0; i < node->getChildNum(); ++i)
+                    checkGeom(node->getChild(i));
+            }
+            return "ok\n";
+        }
+
+        /***
+         * @Description: Check RTree Structure
+         * @Author: jwimd chenjiewei@zju.edu.cn
+         * @msg: None
+         * @param {RNode<M>} *node
+         * @return {*}
+         */
         std::string checkTree(RNode<M> *node)
         {
             if (root->getParent())
@@ -421,6 +591,13 @@ namespace hw6
             return "ok\n";
         }
 
+        /***
+         * @Description: free malloc for whole tree
+         * @Author: jwimd chenjiewei@zju.edu.cn
+         * @msg: None
+         * @param {RNode<M>} *node
+         * @return {*}
+         */
         void freeTree(RNode<M> *node)
         {
             if (!node->isLeafNode())
@@ -449,6 +626,16 @@ namespace hw6
 
                 P->add(L2);
                 P->setEnvelope(P->getEnvelope().unionEnvelope(L2->getEnvelope()));
+
+                RNode<M> *p = P->getParent();
+                RNode<M> *l = P;
+
+                while (p)
+                {
+                    p->setEnvelope(p->getEnvelope().unionEnvelope(l->getEnvelope()));
+                    l = l->getParent();
+                    p = l->getParent();
+                }
 
                 if (P->getChildNum() < size_t(M))
                 {
@@ -529,6 +716,16 @@ namespace hw6
             node->add(feature);
             node->setEnvelope(node->getEnvelope().unionEnvelope(feature->getEnvelope()));
 
+            RNode<M> *p = node->getParent();
+            RNode<M> *l = node;
+
+            while (p)
+            {
+                p->setEnvelope(p->getEnvelope().unionEnvelope(l->getEnvelope()));
+                l = l->getParent();
+                p = l->getParent();
+            }
+
             if (node->getFeatureNum() < size_t(M))
                 return true;
 
@@ -572,21 +769,24 @@ namespace hw6
             if (features.empty())
                 return false;
 
-            bbox = Envelope(-74.1, -73.8, 40.6, 40.8);
+            if (root)
+                freeTree(root);
+            root = nullptr;
 
             root = new RNode<M>(features.begin()->getEnvelope());
             root->add(features.begin().base());
 
             for (auto itr = features.begin() + 1; itr != features.end(); itr++)
             {
-                // if (itr->getName() == "2015-01-10 22:45:54")
-                //   std::cout << "get:" << itr->getName() << std::endl;
+                // if (itr->getName() == "10")
+                //     std::cout << "get:" << itr->getName() << std::endl;
                 if (!insert(itr.base()))
                     return false;
                 // std::cout << itr->getName() << std::endl;
-                // std::cout << checkTree(root);
+                // std::cout << checkGeom(root);
             }
 
+            bbox = root->getEnvelope();
             return true;
         }
 
@@ -604,20 +804,76 @@ namespace hw6
                 height = root->countHeight(height);
         }
 
+        /***
+         * @Description: Range Query
+         * @Author: jwimd chenjiewei@zju.edu.cn
+         * @msg: None
+         * @return {*}
+         */
         virtual void rangeQuery(const Envelope &rect,
                                 std::vector<Feature> &features) override
         {
             features.clear();
+
+            std::vector<const Feature *> p_feature;
+            p_feature.clear();
+
             if (root != nullptr)
-                root->rangeQuery(rect, features);
+                root->rangeQuery(rect, p_feature);
+
+            for (size_t i = 0; i < p_feature.size(); ++i)
+                features.push_back(*p_feature[i]);
         }
 
         virtual bool NNQuery(double x, double y,
                              std::vector<Feature> &features) override
         {
             features.clear();
-            // TODO
-            return false;
+            RNode<M> *node = root->pointInLeafNode(x, y);
+            if (node)
+            {
+                double distance = -1;
+                for (size_t i = 0; i < node->getFeatureNum(); ++i)
+                    if (distance == -1 || node->getFeature(i)->getEnvelope().maxDistance(x, y) < distance)
+                        distance = node->getFeature(i)->getEnvelope().maxDistance(x, y);
+                Envelope rect(x - distance, x + distance, y - distance, y + distance);
+                rangeQuery(rect, features);
+                return true;
+            }
+
+            std::unique_ptr<Point>
+                p(new Point(x, y));
+            std::unique_ptr<Feature> f(new Feature("point", p.get()));
+            node = chooseLeaf(f.get());
+
+            double distance = -1;
+            for (size_t i = 0; i < node->getFeatureNum(); ++i)
+                if (distance == -1 || node->getFeature(i)->getEnvelope().maxDistance(x, y) < distance)
+                    distance = node->getFeature(i)->getEnvelope().maxDistance(x, y);
+            Envelope rect(x - distance, x + distance, y - distance, y + distance);
+            rangeQuery(rect, features);
+            return true;
+        }
+
+        virtual std::vector<std::pair<Feature, Feature>> spatialJoin(Tree *tree, double distance) override
+        {
+            RTree<M> *rtree = dynamic_cast<RTree<M> *>(tree);
+
+            std::vector<std::pair<Feature, Feature>> joinSet;
+            joinSet.clear();
+            if (!rtree)
+                return joinSet;
+            // int innerCount1 = 0, innerCount2 = 0, leafCount1 = 0, leafCount2 = 0;
+            // countNode(innerCount1, leafCount1);
+            // rtree->countNode(innerCount2, leafCount2);
+
+            // if (leafCount2 < leafCount1)
+            //     rtree->getRoot()->spatialJoin(distance, root, joinSet);
+            // else
+            root->spatialJoin(distance, rtree->getRoot(), joinSet);
+
+            
+            return joinSet;
         }
 
         std::shared_ptr<RNode<M>> pointInLeafNode(double x, double y)

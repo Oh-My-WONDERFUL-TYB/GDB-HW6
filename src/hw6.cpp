@@ -1,5 +1,5 @@
 /***
- * @Description:???????
+ * @Description:main entry
  * @Author: jwimd chenjiewei@zju.edu.cn
  * @Date: 2022-11-11 17:50:56
  * @LastEditors: jwimd chenjiewei@zju.edu.cn
@@ -7,14 +7,13 @@
  * @FilePath: /GDB-HW6/src/hw6.cpp
  */
 
-// hw6.cpp : ??????????��?????????
 //
 
 #include "Common.h"
 #include "Geometry.h"
 #include "shapelib/shapefil.h"
 
-#include <GL/freeglut.h> // GLUT??????
+#include <GL/freeglut.h>
 
 #include <cstdio>
 #include <ctime>
@@ -23,6 +22,7 @@
 #include <map>
 #include <memory>
 #include <vector>
+#include <iomanip>
 
 #ifdef USE_RTREE
 #include "RTree.h"
@@ -43,10 +43,13 @@ int mode;
 
 vector<hw6::Feature> features;
 vector<hw6::Feature> roads;
+vector<hw6::Feature> polygons;
 bool showRoad = true;
+bool showChina = false;
 
 unique_ptr<hw6::Tree> pointTree;
 unique_ptr<hw6::Tree> roadTree;
+unique_ptr<hw6::Tree> polygonTree;
 bool showTree = false;
 
 hw6::Feature nearestFeature;
@@ -120,7 +123,10 @@ vector<hw6::Geometry *> readGeom(const char *filename)
             SHPObject *pt = SHPReadObject(file, i);
             for (int j = 0; j < pt->nVertices; ++j)
             {
-                points.push_back(hw6::Point(pt->padfY[j], pt->padfX[j]));
+                if (!showChina)
+                    points.push_back(hw6::Point(pt->padfY[j], pt->padfX[j]));
+                else
+                    points.push_back(hw6::Point(pt->padfX[j], pt->padfY[j]));
             }
             SHPDestroyObject(pt);
             hw6::LineString line(points);
@@ -250,51 +256,172 @@ void loadTaxiData()
     pointTree->constructTree(features);
 }
 
+void loadPolygonData()
+{
+    vector<hw6::Geometry *> geom = readGeom("../data/polygon");
+
+    polygons.clear();
+    for (size_t i = 0; i < geom.size(); ++i)
+        polygons.push_back(hw6::Feature(to_string(i), geom[i]));
+
+    cout << "polygon number: " << geom.size() << endl;
+    polygonTree->setCapacity(5);
+    polygonTree->constructTree(polygons);
+}
+
+void loadChinaData()
+{
+    vector<hw6::Geometry *> geom = readGeom("../data/CN_city");
+    vector<string> name = readName("../data/CN_city");
+
+    polygons.clear();
+    for (size_t i = 0; i < geom.size(); ++i)
+        polygons.push_back(hw6::Feature(name[i], geom[i]));
+
+    cout << "China city number: " << geom.size() << endl;
+    polygonTree->setCapacity(5);
+    polygonTree->constructTree(polygons);
+}
+
 /*
- * ???????
+ * range query
  */
 void rangeQuery()
 {
     vector<hw6::Feature> candidateFeatures;
 
-    // filter step (??????????��????????????????��????????????
+    // filter step get evenlope intersection
     if (mode == RANGEPOINT)
         pointTree->rangeQuery(selectedRect, candidateFeatures);
     else if (mode == RANGELINE)
         roadTree->rangeQuery(selectedRect, candidateFeatures);
+    else if (mode == RANGEPOLYGON)
+        polygonTree->rangeQuery(selectedRect, candidateFeatures);
 
-    // refine step (????��????????????????????????��????????????)
-    // TODO
+    // refine step define real intersection
+    for (size_t i = 0; i < candidateFeatures.size(); ++i)
+    {
+        if (selectedRect.contain(candidateFeatures[i].getEnvelope()))
+            selectedFeatures.push_back(candidateFeatures[i]);
+        else if (candidateFeatures[i].getGeom()->intersects(selectedRect))
+            selectedFeatures.push_back(candidateFeatures[i]);
+    }
 }
 
 /*
- * ??????
+ * nn Query
  */
 void NNQuery(hw6::Point p)
 {
     vector<hw6::Feature> candidateFeatures;
 
-    // filter step (??????????????????????????????)
+    // filter step get candidate use Tree
     if (mode == NNPOINT)
         pointTree->NNQuery(p.getX(), p.getY(), candidateFeatures);
     else if (mode == NNLINE)
         roadTree->NNQuery(p.getX(), p.getY(), candidateFeatures);
+    else if (mode == NNPOLYGON)
+        polygonTree->NNQuery(p.getX(), p.getY(), candidateFeatures);
 
-    // refine step (??????????????��???????)
-    // TODO
+    // refine step get real feature
+    double distance = candidateFeatures[0].getGeom()->distance(&p);
+    nearestFeature = candidateFeatures[0];
+    for (size_t i = 1; i < candidateFeatures.size(); ++i)
+    {
+        if (candidateFeatures[i].getGeom()->distance(&p) < distance)
+        {
+            distance = candidateFeatures[i].getGeom()->distance(&p);
+            nearestFeature = candidateFeatures[i];
+        }
+    }
+}
+
+/***
+ * @Description: Spatial Join Between road and station or taxi
+ * @Author: jwimd chenjiewei@zju.edu.cn
+ * @msg: None
+ * @param {double} distance
+ * @return {*}
+ */
+void spatialJoin(double distance)
+{
+    std::vector<std::pair<Feature, Feature>> joinSet;
+    joinSet.clear();
+
+    joinSet = pointTree->spatialJoin(roadTree.get(), distance);
+
+    std::vector<std::pair<Feature, Feature>> resultSet;
+
+    for (size_t i = 0; i < joinSet.size(); ++i)
+    {
+        const LineString *line = dynamic_cast<const LineString *>(joinSet[i].second.getGeom());
+        if (joinSet[i].first.getGeom()->distance(line) <= distance)
+            resultSet.push_back(joinSet[i]);
+    }
+    if (resultSet.empty())
+    {
+        cout << "empty set" << endl;
+        return;
+    }
+
+    std::vector<std::string> point, road;
+    point.push_back("point");
+    road.push_back("road");
+
+    int listLen1 = 6, listLen2 = 5;
+
+    for (size_t i = 0; i < resultSet.size(); ++i)
+    {
+        point.push_back(resultSet[i].first.getName());
+        road.push_back(resultSet[i].second.getName());
+
+        if (resultSet[i].first.getName().length() + 1 > listLen1)
+            listLen1 = resultSet[i].first.getName().length() + 1;
+        if (resultSet[i].second.getName().length() + 1 > listLen2)
+            listLen2 = resultSet[i].second.getName().length() + 1;
+    }
+
+    int totalLen = listLen1 + listLen2 + 3;
+
+    cout << left << setw(totalLen) << setfill('-') << '-' << endl;
+
+    for (size_t i = 0; i < resultSet.size() + 1; ++i)
+    {
+        cout << setw(1) << '|';
+        cout << setw(listLen1) << setfill(' ') << point[i];
+        cout << setw(1) << '|';
+        cout << setw(listLen2) << setfill(' ') << road[i];
+        cout << setw(1) << '|' << endl;
+        if (i == 0)
+            cout << setw(totalLen) << setfill('-') << '-' << endl;
+    }
+
+    cout << setw(totalLen) << setfill('-') << '-' << endl;
+    cout << "index return " << joinSet.size() << " row" << endl;
+    cout << "final return " << resultSet.size() << " row" << endl;
 }
 
 /*
- * ??????????????????????
+ * screen point to geom point
  */
 void transfromPt(hw6::Point &pt)
 {
-    const hw6::Envelope bbox = pointTree->getEnvelope();
+    hw6::Envelope bbox = roadTree->getEnvelope();
     double width = bbox.getMaxX() - bbox.getMinX() + 0.002;
     double height = bbox.getMaxY() - bbox.getMinY() + 0.002;
 
     double x = pt.getX() * width / screenWidth + bbox.getMinX() - 0.001;
     double y = pt.getY() * height / screenHeight + bbox.getMinY() - 0.001;
+
+    if (mode == POLYGON || mode == RANGEPOLYGON || mode == NNPOLYGON)
+    {
+        bbox = polygonTree->getEnvelope();
+        width = bbox.getMaxX() - bbox.getMinX() + 20;
+        height = bbox.getMaxY() - bbox.getMinY() + 20;
+
+        x = pt.getX() * width / screenWidth + bbox.getMinX() - 10;
+        y = pt.getY() * height / screenHeight + bbox.getMinY() - 10;
+    }
 
     x = max(bbox.getMinX(), x);
     x = min(bbox.getMaxX(), x);
@@ -304,7 +431,7 @@ void transfromPt(hw6::Point &pt)
 }
 
 /*
- * ???????
+ * display geom
  */
 void display()
 {
@@ -314,12 +441,22 @@ void display()
 
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
+    hw6::Envelope bbox;
 
-    const hw6::Envelope bbox = pointTree->getEnvelope();
-    gluOrtho2D(bbox.getMinX() - 0.001, bbox.getMaxX() + 0.001,
-               bbox.getMinY() - 0.001, bbox.getMaxY() + 0.001);
+    if (mode == POLYGON || mode == RANGEPOLYGON || mode == NNPOLYGON)
+    {
+        bbox = polygonTree->getEnvelope();
+        gluOrtho2D(bbox.getMinX() - 10, bbox.getMaxX() + 10,
+                   bbox.getMinY() - 10, bbox.getMaxY() + 10);
+    }
+    else
+    {
+        bbox = roadTree->getEnvelope();
+        gluOrtho2D(bbox.getMinX() - 0.001, bbox.getMaxX() + 0.001,
+                   bbox.getMinY() - 0.001, bbox.getMaxY() + 0.001);
+    }
 
-    // ??��????
+    // show road
     if (showRoad)
     {
         glColor3d(252 / 255.0, 214 / 255.0, 164 / 255.0);
@@ -327,8 +464,8 @@ void display()
             roads[i].draw();
     }
 
-    // ??????
-    if (!(mode == RANGELINE || mode == NNLINE))
+    //  show point
+    if (!(mode == RANGELINE || !mode == NNLINE) && !(mode == POLYGON || mode == RANGEPOLYGON || mode == NNPOLYGON))
     {
         glPointSize((float)pointSize);
         glColor3d(0.0, 146 / 255.0, 247 / 255.0);
@@ -336,17 +473,27 @@ void display()
             features[i].draw();
     }
 
-    // ?????????
+    // show polygon
+    if (mode == POLYGON || mode == RANGEPOLYGON || mode == NNPOLYGON)
+    {
+        glColor3d(123 / 255.0, 200 / 255.0, 200 / 255.0);
+        for (size_t i = 0; i < polygons.size(); ++i)
+            polygons[i].draw();
+    }
+
+    // show tree
     if (showTree)
     {
         glColor3d(0.0, 146 / 255.0, 247 / 255.0);
         if (mode == RANGELINE || mode == NNLINE)
             roadTree->draw();
+        else if (mode == POLYGON || mode == RANGEPOLYGON || mode == NNPOLYGON)
+            polygonTree->draw();
         else
             pointTree->draw();
     }
 
-    // ??????????????
+    // show nnPoint
     if (mode == NNPOINT)
     {
         glPointSize(5.0);
@@ -354,8 +501,8 @@ void display()
         nearestFeature.draw();
     }
 
-    // ??????????��????
-    if (mode == NNLINE)
+    // show nnLine or nnPolygon
+    if (mode == NNLINE || mode == NNPOLYGON)
     {
         glLineWidth(3.0);
         glColor3d(0.9, 0.0, 0.0);
@@ -363,8 +510,8 @@ void display()
         glLineWidth(1.0);
     }
 
-    // ???????????
-    if (mode == RANGEPOINT || mode == RANGELINE)
+    // show range query result
+    if (mode == RANGEPOINT || mode == RANGELINE || mode == RANGEPOLYGON)
     {
         glColor3d(0.0, 0.0, 0.0);
         selectedRect.draw();
@@ -378,13 +525,13 @@ void display()
 }
 
 /*
- * ??????????
+ * mouse event
  */
 void mouse(int button, int state, int x, int y)
 {
     if (button == GLUT_LEFT_BUTTON && state == GLUT_DOWN)
     {
-        if (mode == RANGEPOINT || mode == RANGELINE)
+        if (mode == RANGEPOINT || mode == RANGELINE || mode == RANGEPOLYGON)
         {
             if (firstPoint)
             {
@@ -413,7 +560,7 @@ void passiveMotion(int x, int y)
 {
     corner[1] = hw6::Point(x, screenHeight - y);
 
-    if ((mode == RANGEPOINT || mode == RANGELINE) && !firstPoint)
+    if ((mode == RANGEPOINT || mode == RANGELINE || mode == RANGEPOLYGON) && !firstPoint)
     {
         corner[1] = hw6::Point(x, screenHeight - y);
         transfromPt(corner[1]);
@@ -425,7 +572,7 @@ void passiveMotion(int x, int y)
 
         glutPostRedisplay();
     }
-    else if (mode == NNPOINT || mode == NNLINE)
+    else if (mode == NNPOINT || mode == NNLINE || mode == NNPOLYGON)
     {
         hw6::Point p(x, screenHeight - y);
         transfromPt(p);
@@ -464,6 +611,9 @@ void processNormalKeys(unsigned char key, int x, int y)
         mode = RANGEPOINT;
         firstPoint = true;
         break;
+    case 'J':
+    case 'j':
+        spatialJoin(0.00001);
     case 'B':
     case 'b':
         loadStationData();
@@ -477,10 +627,34 @@ void processNormalKeys(unsigned char key, int x, int y)
     case 'R':
     case 'r':
         showRoad = !showRoad;
+        mode = Default;
         break;
     case 'Q':
     case 'q':
         showTree = !showTree;
+        break;
+    case 'P':
+    case 'p':
+        showRoad = false;
+        showChina = false;
+        loadPolygonData();
+        mode = POLYGON;
+        break;
+    case 'C':
+    case 'c':
+        showRoad = false;
+        showChina = true;
+        loadChinaData();
+        mode = POLYGON;
+        break;
+    case 'O':
+    case 'o':
+        mode = RANGEPOLYGON;
+        firstPoint = true;
+        break;
+    case 'I':
+    case 'i':
+        mode = NNPOLYGON;
         break;
     case '+':
         pointSize *= 1.1;
@@ -512,10 +686,15 @@ int main(int argc, char *argv[])
          << "  s  : range search for stations\n"
          << "  N  : nearest road search\n"
          << "  n  : nearest station search\n"
+         << "  J/j: spatial join between road and station(or taxi), distance = 0.0001\n"
          << "  B/b: Bicycle data\n"
          << "  T/t: Taxi data\n"
          << "  R/r: show Road\n"
          << "  Q/q: show Tree\n"
+         << "  P/p: show simple polygon \n"
+         << "  C/c: show China city polygon \n"
+         << "  O/o: polygon range query \n"
+         << "  I/i: polygon nearest search \n"
          << "  +  : increase point size\n"
          << "  -  : decrease point size\n"
          << "  1  : Test Envelope contain, interset and union\n"
@@ -530,10 +709,13 @@ int main(int argc, char *argv[])
 
     pointTree = make_unique<TreeTy>();
     roadTree = make_unique<TreeTy>();
+    polygonTree = make_unique<TreeTy>();
 
     loadRoadData();
 
     loadStationData();
+
+    loadPolygonData();
 
     glutInit(&argc, argv);
     glutInitWindowSize(screenWidth, screenHeight);

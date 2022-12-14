@@ -91,6 +91,8 @@ namespace hw6
     virtual bool NNQuery(double x, double y,
                          std::vector<Feature> &features) override;
 
+    virtual std::vector<std::pair<Feature, Feature>> spatialJoin(Tree *tree, double distance) override;
+
     QuadNode *pointInLeafNode(double x, double y)
     {
       return root->pointInLeafNode(x, y);

@@ -65,6 +65,9 @@ namespace hw6
     bool contain(const Envelope &envelope) const;
     bool intersect(const Envelope &envelope) const;
     Envelope unionEnvelope(const Envelope &envelope) const;
+
+    double minDistance(double x, double y) const;
+    double maxDistance(double x, double y) const;
   };
 
   /*
@@ -124,8 +127,6 @@ namespace hw6
 
     // intersection test with the envelope for range query
     virtual bool intersects(const Envelope &rect) const;
-
-    
 
     virtual void draw() const;
 

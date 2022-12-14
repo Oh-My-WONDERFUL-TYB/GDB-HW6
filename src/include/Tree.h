@@ -93,7 +93,10 @@ namespace hw6
     virtual bool NNQuery(double x, double y,
                          std::vector<Feature> &features) = 0;
 
-    virtual void draw() = 0;
+    virtual std::vector<std::pair<Feature, Feature>> spatialJoin(Tree *tree, double distance) = 0;
+
+    virtual void
+    draw() = 0;
   };
 
 } // namespace hw6

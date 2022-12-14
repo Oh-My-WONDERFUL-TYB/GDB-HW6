@@ -8,6 +8,7 @@
  */
 #include "Geometry.h"
 #include <cmath>
+#include <memory>
 #include <GL/freeglut.h>
 
 #include <glm/glm.hpp>
@@ -65,6 +66,11 @@ namespace hw6
         if (envelope.contain(this->getMaxX(), this->getMaxY()))
             return true;
 
+        if (this->getMaxX() >= envelope.getMaxX() && this->getMaxY() <= envelope.getMaxY() && this->getMinX() <= envelope.getMinX() && this->getMinY() >= envelope.getMinY())
+            return true;
+        if (this->getMaxX() <= envelope.getMaxX() && this->getMaxY() >= envelope.getMaxY() && this->getMinX() >= envelope.getMinX() && this->getMinY() <= envelope.getMinY())
+            return true;
+
         return false;
     }
 
@@ -78,6 +84,50 @@ namespace hw6
     Envelope Envelope::unionEnvelope(const Envelope &envelope) const
     {
         return Envelope(std::min(this->minX, envelope.getMinX()), std::max(this->maxX, envelope.getMaxX()), std::min(this->minY, envelope.getMinY()), std::max(this->maxY, envelope.getMaxY()));
+    }
+
+    /***
+     * @Description: Return min Distance Between point(x,y)
+     * @Author: jwimd chenjiewei@zju.edu.cn
+     * @msg: None
+     * @param {double} x
+     * @param {double} y
+     * @return {*}
+     */
+    double Envelope::minDistance(double x, double y) const
+    {
+        if (contain(x, y))
+            return 0;
+
+        if (x >= minX && x <= maxX)
+            return std::min(fabs(y - maxY), fabs(y - minY));
+        else if (y >= minY && y <= maxY)
+            return std::min(fabs(x - maxX), fabs(x - minX));
+
+        std::unique_ptr<Point> p1(new Point(minX, minY));
+        std::unique_ptr<Point> p2(new Point(minX, maxY));
+        std::unique_ptr<Point> p3(new Point(maxX, minY));
+        std::unique_ptr<Point> p4(new Point(maxX, maxY));
+
+        return std::min(std::min(Point(x, y).distance(p1.get()), Point(x, y).distance(p2.get())), std::min(Point(x, y).distance(p3.get()), Point(x, y).distance(p4.get())));
+    }
+
+    /***
+     * @Description: Return max Distance Between point(x,y)
+     * @Author: jwimd chenjiewei@zju.edu.cn
+     * @msg: None
+     * @param {double} x
+     * @param {double} y
+     * @return {*}
+     */
+    double Envelope::maxDistance(double x, double y) const
+    {
+        std::unique_ptr<Point> p1(new Point(minX, minY));
+        std::unique_ptr<Point> p2(new Point(minX, maxY));
+        std::unique_ptr<Point> p3(new Point(maxX, minY));
+        std::unique_ptr<Point> p4(new Point(maxX, maxY));
+
+        return std::max(std::max(Point(x, y).distance(p1.get()), Point(x, y).distance(p2.get())), std::max(Point(x, y).distance(p3.get()), Point(x, y).distance(p4.get())));
     }
 
     void Envelope::draw() const
@@ -536,12 +586,12 @@ namespace hw6
                     std::max(Ax, Bx) < std::min(Cx, Dx) || std::max(Ay, By) < std::min(Cy, Dy))
                     continue;
 
-                double z1 = glm::normalize(glm::cross(glm::vec3(Cx - Ax, Cy - Ay, 0.0), glm::vec3(Dx - Cx, Dy - Cy, 0.0))).z;
-                double z2 = glm::normalize(glm::cross(glm::vec3(Cx - Bx, Cy - By, 0.0), glm::vec3(Dx - Cx, Dy - Cy, 0.0))).z;
-                double z3 = glm::normalize(glm::cross(glm::vec3(Ax - Cx, Ay - Cy, 0.0), glm::vec3(Bx - Ax, By - Ay, 0.0))).z;
-                double z4 = glm::normalize(glm::cross(glm::vec3(Ax - Dx, Ay - Dy, 0.0), glm::vec3(Bx - Ax, By - Ay, 0.0))).z;
+                double z1 = glm::normalize(glm::cross(glm::vec3(Bx - Ax, By - Ay, 0.0), glm::vec3(Cx - Ax, Cy - Ay, 0.0))).z;
+                double z2 = glm::normalize(glm::cross(glm::vec3(Bx - Ax, By - Ay, 0.0), glm::vec3(Dx - Ax, Dy - Ay, 0.0))).z;
+                double z3 = glm::normalize(glm::cross(glm::vec3(Dx - Cx, Dy - Cy, 0.0), glm::vec3(Ax - Cx, Ay - Cy, 0.0))).z;
+                double z4 = glm::normalize(glm::cross(glm::vec3(Dx - Cx, Dy - Cy, 0.0), glm::vec3(Bx - Ax, By - Ay, 0.0))).z;
 
-                if ((z1 + z2 == 0 || z1 == 0 || z2 == 0) && (z3 + z4 == 0 || z3 == 0 || z4 == 0))
+                if (z1 * z2 <= 0 && z3 * z4 <= 0)
                     return true;
             }
         }
@@ -729,12 +779,12 @@ namespace hw6
                 std::max(Ax, Bx) < std::min(Cx, Dx) || std::max(Ay, By) < std::min(Cy, Dy))
                 continue;
 
-            double z1 = glm::normalize(glm::cross(glm::vec3(Cx - Ax, Cy - Ay, 0.0), glm::vec3(Dx - Cx, Dy - Cy, 0.0))).z;
-            double z2 = glm::normalize(glm::cross(glm::vec3(Cx - Bx, Cy - By, 0.0), glm::vec3(Dx - Cx, Dy - Cy, 0.0))).z;
-            double z3 = glm::normalize(glm::cross(glm::vec3(Ax - Cx, Ay - Cy, 0.0), glm::vec3(Bx - Ax, By - Ay, 0.0))).z;
-            double z4 = glm::normalize(glm::cross(glm::vec3(Ax - Dx, Ay - Dy, 0.0), glm::vec3(Bx - Ax, By - Ay, 0.0))).z;
+            double z1 = glm::normalize(glm::cross(glm::vec3(Bx - Ax, By - Ay, 0.0), glm::vec3(Cx - Ax, Cy - Ay, 0.0))).z;
+            double z2 = glm::normalize(glm::cross(glm::vec3(Bx - Ax, By - Ay, 0.0), glm::vec3(Dx - Ax, Dy - Ay, 0.0))).z;
+            double z3 = glm::normalize(glm::cross(glm::vec3(Dx - Cx, Dy - Cy, 0.0), glm::vec3(Ax - Cx, Ay - Cy, 0.0))).z;
+            double z4 = glm::normalize(glm::cross(glm::vec3(Dx - Cx, Dy - Cy, 0.0), glm::vec3(Bx - Ax, By - Ay, 0.0))).z;
 
-            if (z1 + z2 == 0 && z1 != z2 && z3 + z4 == 0 && z3 != z4)
+            if (z1 * z2 < 0 && z3 * z4 < 0)
                 inPolygon = !inPolygon;
         }
 
@@ -764,10 +814,10 @@ namespace hw6
                     std::max(Ax, Bx) < std::min(Cx, Dx) || std::max(Ay, By) < std::min(Cy, Dy))
                     continue;
 
-                double z1 = glm::normalize(glm::cross(glm::vec3(Cx - Ax, Cy - Ay, 0.0), glm::vec3(Dx - Cx, Dy - Cy, 0.0))).z;
-                double z2 = glm::normalize(glm::cross(glm::vec3(Cx - Bx, Cy - By, 0.0), glm::vec3(Dx - Cx, Dy - Cy, 0.0))).z;
-                double z3 = glm::normalize(glm::cross(glm::vec3(Ax - Cx, Ay - Cy, 0.0), glm::vec3(Bx - Ax, By - Ay, 0.0))).z;
-                double z4 = glm::normalize(glm::cross(glm::vec3(Ax - Dx, Ay - Dy, 0.0), glm::vec3(Bx - Ax, By - Ay, 0.0))).z;
+                double z1 = glm::normalize(glm::cross(glm::vec3(Bx - Ax, By - Ay, 0.0), glm::vec3(Cx - Ax, Cy - Ay, 0.0))).z;
+                double z2 = glm::normalize(glm::cross(glm::vec3(Bx - Ax, By - Ay, 0.0), glm::vec3(Dx - Ax, Dy - Ay, 0.0))).z;
+                double z3 = glm::normalize(glm::cross(glm::vec3(Dx - Cx, Dy - Cy, 0.0), glm::vec3(Ax - Cx, Ay - Cy, 0.0))).z;
+                double z4 = glm::normalize(glm::cross(glm::vec3(Dx - Cx, Dy - Cy, 0.0), glm::vec3(Bx - Ax, By - Ay, 0.0))).z;
 
                 if (z1 + z2 == 0 && z1 != z2 && z3 + z4 == 0 && z3 != z4)
                     inPolygon = !inPolygon;

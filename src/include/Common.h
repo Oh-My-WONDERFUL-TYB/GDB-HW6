@@ -8,6 +8,9 @@
 #define NNLINE 4
 #define QUADTREE 5
 #define RTREE 6
+#define POLYGON 7
+#define RANGEPOLYGON 8
+#define NNPOLYGON 9
 
 #define TEST1 1
 #define TEST2 2
@@ -19,5 +22,7 @@
 #define TEST8 8
 
 #define USE_RTREE
+
+#define MIN_AREA_SPLIT
 
 #endif
