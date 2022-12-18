@@ -197,30 +197,21 @@ namespace hw6
      */
     double Point::distance(const Polygon *polygon) const
     {
+        double mindist = 0.0;
+        if (polygon->contains(this))
+            return 0.0;
+
+
         LineString line = polygon->getExteriorRing();
-        size_t n = line.numPoints();
+        mindist = distance(&line);
 
-        std::vector<LineString> innerRings = polygon->getInnerRings();
-
-        for (std::vector<LineString>::iterator ring = innerRings.begin(); ring < innerRings.end(); ++ring)
+        for (std::vector<LineString>::iterator it = polygon->getInnerRings().begin(); it != polygon->getInnerRings().end();++it)
         {
-            for (size_t i = 0; i < ring->numPoints() - 1; ++i)
-            {
-                double x1 = line.getPointN(i).getX();
-                double y1 = line.getPointN(i).getY();
-                double x2 = line.getPointN(i + 1).getX();
-                double y2 = line.getPointN(i + 1).getY();
-
-                if ((x1 <= x || x2 <= x) &&
-                    ((y1 >= y && y2 <= y && (x1 - x2) / (y1 - y2) * (y - y2) + x2 <= x) || (y1 <= y && y2 >= y && (x1 - x2) / (y1 - y2) * (y - y2) + x2 <= x)))
-                    return this->distance(ring.base());
-            }
+            double dist = distance(it.base());
+            if (dist < mindist)
+                mindist = dist;
         }
 
-        double mindist = 0.0;
-
-        if (!polygon->contains(this))
-            mindist = this->distance(&line);
         return mindist;
     }
 
@@ -794,10 +785,10 @@ namespace hw6
         {
             for (size_t i = 0; i < ring->numPoints() - 1; ++i)
             {
-                double Cx = line.getPointN(i).getX();
-                double Cy = line.getPointN(i).getY();
-                double Dx = line.getPointN(i + 1).getX();
-                double Dy = line.getPointN(i + 1).getY();
+                double Cx = ring->getPointN(i).getX();
+                double Cy = ring->getPointN(i).getY();
+                double Dx = ring->getPointN(i + 1).getX();
+                double Dy = ring->getPointN(i + 1).getY();
 
                 double Ax = x;
                 double Ay = y;
@@ -819,7 +810,7 @@ namespace hw6
                 double z3 = glm::normalize(glm::cross(glm::vec3(Dx - Cx, Dy - Cy, 0.0), glm::vec3(Ax - Cx, Ay - Cy, 0.0))).z;
                 double z4 = glm::normalize(glm::cross(glm::vec3(Dx - Cx, Dy - Cy, 0.0), glm::vec3(Bx - Ax, By - Ay, 0.0))).z;
 
-                if (z1 + z2 == 0 && z1 != z2 && z3 + z4 == 0 && z3 != z4)
+                if (z1 * z2 < 0 && z3 * z4 < 0)
                     inPolygon = !inPolygon;
             }
         }

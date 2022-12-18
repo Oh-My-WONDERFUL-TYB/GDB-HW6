@@ -36,7 +36,10 @@ namespace hw6
     const Envelope &getEnvelope() { return bbox; }
 
     QuadNode *getChildNode(size_t i) { return i < 4 ? children[i] : nullptr; }
-
+    QuadNode *getChild(size_t i)
+    {
+      return children[i] ? children[i] : nullptr;
+    }
     size_t getFeatureNum() const { return features.size(); }
 
     const Feature &getFeature(size_t i) const { return features[i]; }
@@ -62,6 +65,8 @@ namespace hw6
     void rangeQuery(const Envelope &rect, std::vector<Feature> &features);
 
     QuadNode *pointInLeafNode(double x, double y);
+
+    void spatialJoin_new(double distance, QuadNode *node, std::vector<std::pair<Feature, Feature>> &joinSet);
   };
 
   class QuadTree : public Tree
@@ -97,6 +102,7 @@ namespace hw6
     {
       return root->pointInLeafNode(x, y);
     }
+    QuadNode *getRoot() { return root; }
 
     virtual void draw() override;
 

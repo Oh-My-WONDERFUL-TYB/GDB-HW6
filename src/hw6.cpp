@@ -33,6 +33,7 @@ using TreeTy = hw6::QuadTree;
 #endif
 
 using namespace std;
+using namespace hw6;
 
 int screenWidth = 640;
 int screenHeight = 480;
@@ -279,7 +280,7 @@ void loadChinaData()
         polygons.push_back(hw6::Feature(name[i], geom[i]));
 
     cout << "China city number: " << geom.size() << endl;
-    polygonTree->setCapacity(5);
+    polygonTree->setCapacity(6);
     polygonTree->constructTree(polygons);
 }
 
@@ -686,7 +687,7 @@ int main(int argc, char *argv[])
          << "  s  : range search for stations\n"
          << "  N  : nearest road search\n"
          << "  n  : nearest station search\n"
-         << "  J/j: spatial join between road and station(or taxi), distance = 0.0001\n"
+         << "  J/j: spatial join between road and station(or taxi), distance = 0.00001\n"
          << "  B/b: Bicycle data\n"
          << "  T/t: Taxi data\n"
          << "  R/r: show Road\n"
@@ -702,7 +703,6 @@ int main(int argc, char *argv[])
          << "  3  : Test distance between Point and Polygon\n"
          << "  4  : Test tree construction\n"
          << "  5  : Test inner rings inplement of Polygon\n"
-         << "  6  : Test (your option here)\n"
          << "  8  : Tree performance analysis\n"
          << "  ESC: quit\n"
          << endl;
@@ -721,7 +721,12 @@ int main(int argc, char *argv[])
     glutInitWindowSize(screenWidth, screenHeight);
     glutInitWindowPosition(0, 0);
     glutInitDisplayMode(GLUT_RGB | GLUT_DOUBLE);
-    glutCreateWindow("New York");
+
+#ifdef USE_RTREE
+    glutCreateWindow("GDB HW6 -RTree Version");
+#else
+    glutCreateWindow("GDB HW6 -QuadTree Version");
+#endif
 
     glutMouseFunc(mouse);
     glutDisplayFunc(display);

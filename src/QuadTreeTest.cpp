@@ -2,6 +2,7 @@
 #include "Common.h"
 
 #include <cmath>
+#include <memory>
 
 using namespace hw6;
 
@@ -36,36 +37,47 @@ namespace hw6
         for (int cap = 70; cap <= 200; cap += 10)
         {
             QuadTree *qtree = new QuadTree();
-            // Task ??????????????????????????????
-            // TODO
+            qtree->setCapacity(cap);
 
             clock_t start_time = clock();
-            // TODO
+            qtree->constructTree(features);
             clock_t end_time = clock();
 
             int height = 0, interiorNum = 0, leafNum = 0;
-            // TODO
+            qtree->countHeight(height);
+            qtree->countNode(interiorNum, leafNum);
 
             cout << "Capacity " << cap << "\n";
             cout << "Height: " << height
                  << " \tInterior node number: " << interiorNum
                  << " \tLeaf node number: " << leafNum << "\n";
-            cout << "Construction time: " << (end_time - start_time) / 1000.0 << "s"
+            cout << "Construction time: " << (end_time - start_time) / 1000.0 / 1000.0 << "s"
                  << endl;
 
             double x, y;
-            vector<Feature> candidateFeatures;
+            
             start_time = clock();
             for (int i = 0; i < 100000; ++i)
             {
                 x = -((rand() % 225) / 10000.0 + 73.9812);
                 y = (rand() % 239) / 10000.0 + 40.7247;
+                vector<Feature> candidateFeatures;
                 qtree->NNQuery(x, y, candidateFeatures);
-                // refine step
-                // TODO
+
+                std::unique_ptr<Point> p(new Point(x, y));
+                double distance = candidateFeatures[0].getGeom()->distance(p.get());
+                Feature nearestFeature = candidateFeatures[0];
+                for (size_t i = 1; i < candidateFeatures.size(); ++i)
+                {
+                    if (candidateFeatures[i].getGeom()->distance(p.get()) < distance)
+                    {
+                        distance = candidateFeatures[i].getGeom()->distance(p.get());
+                        nearestFeature = candidateFeatures[i];
+                    }
+                }
             }
             end_time = clock();
-            cout << "NNQuery time: " << (end_time - start_time) / 1000.0 << "s"
+            cout << "NNQuery time: " << (end_time - start_time) / 1000.0 / 1000.0 << "s"
                  << endl
                  << endl;
 
@@ -311,6 +323,74 @@ namespace hw6
             geom2.clear();
 
             cout << "QuadTree Construction: " << cct << " / " << ncase
+                 << " tests are passed" << endl;
+        }
+        else if (t == TEST5)
+        {
+            cout << "????5: Distance Between Point And Polygon With Inner Rings" << endl;
+
+            vector<Point> points;
+            points.push_back(Point(5, 0));
+            points.push_back(Point(3, 6));
+            points.push_back(Point(2, 4));
+            points.push_back(Point(-2, 4));
+            points.push_back(Point(-3, 5));
+            points.push_back(Point(-5, 0));
+            points.push_back(Point(0, -3));
+            points.push_back(Point(5, 0));
+            LineString ex(points);
+            vector<LineString> in;
+            points.clear();
+            points.push_back(Point(3, 1));
+            points.push_back(Point(3, 3));
+            points.push_back(Point(1, 3));
+            points.push_back(Point(1, 1));
+            points.push_back(Point(3, 1));
+            in.push_back(LineString(points));
+            points.clear();
+            points.push_back(Point(-1, -1));
+            points.push_back(Point(-1, 2));
+            points.push_back(Point(-2, 2));
+            points.push_back(Point(-2, -1));
+            points.push_back(Point(-1, -1));
+            in.push_back(LineString(points));
+            Polygon poly(ex, in);
+
+            points.clear();
+            points.push_back(Point(5, 4));
+            points.push_back(Point(3, 4));
+            points.push_back(Point(0, 4));
+            points.push_back(Point(-3, 4));
+            points.push_back(Point(-5, 4));
+            points.push_back(Point(5, 5));
+            points.push_back(Point(3, 5));
+            points.push_back(Point(0, 5));
+            points.push_back(Point(-3, 5));
+            points.push_back(Point(0, 0));
+            points.push_back(Point(3, 3));
+            points.push_back(Point(2, 2));
+            points.push_back(Point(-1.5, 1));
+            points.push_back(Point(5, 2));
+            points.push_back(Point(-5, 2));
+
+            double dists[] = {1.26491, 0, 0, 0, 1.48556, 1.58114, 0, 1, 0, 0, 0, 1, 0.5, 0.63246, 0.74278};
+
+            int failedCase = 0;
+            for (size_t i = 0; i < points.size(); ++i)
+            {
+                double dist = points[i].distance(&poly);
+                if (fabs(dist - dists[i]) > 0.00001)
+                {
+                    failedCase += 1;
+                    cout << "Your answer is " << dist << " for test between ";
+                    poly.print();
+                    cout << " and ";
+                    points[i].print();
+                    cout << ", but the answer is " << dists[i] << endl;
+                }
+            }
+            cout << "Distance Between Point And Polygon With Inner Rings: "
+                 << points.size() - failedCase << " / " << points.size()
                  << " tests are passed" << endl;
         }
         else if (t == TEST8)

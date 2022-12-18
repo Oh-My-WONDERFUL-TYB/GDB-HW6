@@ -64,6 +64,21 @@ namespace hw6
       if (geom)
         geom->draw();
     }
+
+    bool operator==(const Feature f) const
+    {
+      return f.geom == geom;
+    }
+
+    bool operator>(const Feature f) const
+    {
+      return f.name > name;
+    }
+
+    bool operator<(const Feature f) const
+    {
+      return f.name < name;
+    }
   };
 
   class Tree

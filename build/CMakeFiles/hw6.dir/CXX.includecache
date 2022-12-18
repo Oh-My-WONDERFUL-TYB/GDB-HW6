@@ -6,6 +6,16 @@
 
 #IncludeRegexTransform: 
 
+/home/jwimd/Study/Geospatial_Database/Homework/hw6/GDB-HW6/src/QuadTreeTest.cpp
+QuadTree.h
+/home/jwimd/Study/Geospatial_Database/Homework/hw6/GDB-HW6/src/QuadTree.h
+Common.h
+/home/jwimd/Study/Geospatial_Database/Homework/hw6/GDB-HW6/src/Common.h
+cmath
+-
+memory
+-
+
 /home/jwimd/Study/Geospatial_Database/Homework/hw6/GDB-HW6/src/hw6.cpp
 Common.h
 /home/jwimd/Study/Geospatial_Database/Homework/hw6/GDB-HW6/src/Common.h

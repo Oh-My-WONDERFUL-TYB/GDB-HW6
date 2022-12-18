@@ -1,5 +1,10 @@
 #include "QuadTree.h"
+
+#include "float.h"
+
 #include <set>
+#include <map>
+#include <memory>
 
 namespace hw6
 {
@@ -14,9 +19,36 @@ namespace hw6
             delete children[i];
             children[i] = nullptr;
         }
+        if (features.size() > capacity)
+        {
+            double midx = (bbox.getMinX() + bbox.getMaxX()) / 2.0;
+            double midy = (bbox.getMinY() + bbox.getMaxY()) / 2.0;
+            Envelope e0(bbox.getMinX(), midx, midy, bbox.getMaxY());
+            children[0] = new QuadNode(e0);
+            Envelope e1(midx, bbox.getMaxX(), midy, bbox.getMaxY());
+            children[1] = new QuadNode(e1);
+            Envelope e2(midx, bbox.getMaxX(), bbox.getMinY(), midy);
+            children[2] = new QuadNode(e2);
+            Envelope e3(bbox.getMinX(), midx, bbox.getMinY(), midy);
+            children[3] = new QuadNode(e3);
 
-        // Task construction
-        // TODO
+            for (Feature f : features)
+            {
+                for (int i = 0; i < 4; ++i)
+                {
+                    if (children[i]->getEnvelope().intersect(f.getEnvelope()))
+                    {
+                        children[i]->add(f);
+                    }
+                }
+            }
+
+            for (int i = 0; i < 4; ++i)
+            {
+                children[i]->split(capacity);
+            }
+            features.clear();
+        }
     }
 
     void QuadNode::countNode(int &interiorNum, int &leafNum)
@@ -54,14 +86,41 @@ namespace hw6
             return;
 
         // Task range query
-        // TODO
+        if (isLeafNode())
+        {
+            for (auto f : this->features)
+            {
+                if (f.getEnvelope().intersect(rect))
+                {
+                    features.push_back(f);
+                }
+            }
+        }
+        else
+        {
+            for (int i = 0; i < 4; ++i)
+            {
+                children[i]->rangeQuery(rect, features);
+            }
+        }
     }
 
     QuadNode *QuadNode::pointInLeafNode(double x, double y)
     {
-        // Task NN query
-        // TODO
-
+        if (isLeafNode())
+        {
+            return this;
+        }
+        else
+        {
+            for (int i = 0; i < 4; ++i)
+            {
+                if (children[i]->bbox.contain(x, y))
+                {
+                    return children[i]->pointInLeafNode(x, y);
+                }
+            }
+        }
         return nullptr;
     }
 
@@ -85,12 +144,16 @@ namespace hw6
     {
         if (features.empty())
             return false;
-
-        // Task construction
-        // TODO
-
-        bbox = Envelope(-74.1, -73.8, 40.6, 40.8); // ע����д�����Ҫ����Ϊfeatures�İ�Χ�У�����ڵ�İ�Χ��
-
+            
+        Envelope e(DBL_MAX, -DBL_MAX, DBL_MAX, -DBL_MAX);
+        for (Feature f : features)
+        {
+            e = e.unionEnvelope(f.getEnvelope());
+        }
+        root = new QuadNode(e);
+        root->add(features);
+        root->split(capacity);
+        bbox = e;
         return true;
     }
 
@@ -113,31 +176,47 @@ namespace hw6
                               std::vector<Feature> &features)
     {
         features.clear();
-
         // Task range query
-        // TODO
-
-        // filter step (ѡ���ѯ�����뼸�ζ����Χ���ཻ�ļ��ζ���)
-
-        // ע���Ĳ��������ѯ�����غ�ѡ������������hw6��rangeQuery�����
+        std::vector<Feature> features1;
+        root->rangeQuery(rect, features1);
+        std::set<Feature> featureMap;
+        for (auto f : features1)
+        {
+            if (featureMap.find(f) == featureMap.end())
+            {
+                if (f.getGeom()->intersects(rect))
+                    features.push_back(f);
+                featureMap.insert(f);
+            }
+        }
     }
 
     bool QuadTree::NNQuery(double x, double y, std::vector<Feature> &features)
     {
         if (!root || !(root->getEnvelope().contain(x, y)))
             return false;
-
-        // Task NN query
-        // TODO
-
-        // filter step
-        // (ʹ��maxDistance2Envelope��������ò�ѯ�㵽���ζ����Χ�е���̵������룬Ȼ�������ѯ��ú�ѡ��)
-
         const Envelope &envelope = root->getEnvelope();
         double minDist = std::max(envelope.getWidth(), envelope.getHeight());
-
-        // ע���Ĳ����ڽ���ѯ�����غ�ѡ������������hw6��NNQuery�����
-
+        QuadNode *n = root->pointInLeafNode(x, y);
+        for (int i = 0; i < n->getFeatureNum(); ++i)
+        {
+            minDist = std::min(minDist, n->getFeature(i).maxDistance2Envelope(x, y));
+        }
+        Envelope rect = Envelope(x - minDist, x + minDist, y - minDist, y + minDist);
+        std::vector<Feature> feature_tt;
+        rangeQuery(rect, feature_tt);
+        // refine step
+        double dist;
+        for (Feature f : feature_tt)
+        {
+            std::unique_ptr<Point> p(new Point(x, y));
+            dist = f.getGeom()->distance(p.get());
+            if (dist <= minDist)
+            {
+                features.push_back(f);
+                minDist = dist;
+            }
+        }
         return true;
     }
 
@@ -145,16 +224,32 @@ namespace hw6
     {
         QuadTree *qtree = dynamic_cast<QuadTree *>(tree); // father class pointer to child class pointer
         std::vector<std::pair<Feature, Feature>> f;
-
-        // TODO
-
-        // 返回一个vector，这个vector的元素是一个Feature对，这个对满足两元素距离可能小于distance
-        // 判断方法是对this的每一个根节点建立一个Envelope——
-        // Envelope rect(getFeature(i)->getEnvelope().getMinX() - distance, getFeature(i)->getEnvelope().getMaxX() + distance, getFeature(i)->getEnvelope().getMinY() - distance, getFeature(i)->getEnvelope().getMaxY() + distance);
-        // 然后用这个rect去和qtree做rangequery，返回的features和做查询的feature形成一个pair然后返回
-        // 可以看r树的实现和最终的输出
-
+        f.clear();
+        if (!qtree)
+            return f;
+        root->spatialJoin_new(distance, qtree->getRoot(), f);
         return f;
+    }
+
+    void QuadNode::spatialJoin_new(double distance, QuadNode *node, std::vector<std::pair<Feature, Feature>> &joinSet)
+    {
+        if (isLeafNode())
+        {
+            for (size_t i = 0; i < getFeatureNum(); ++i)
+            {
+                std::vector<Feature> joinFeature;
+
+                Envelope rect(getFeature(i).getEnvelope().getMinX() - distance, getFeature(i).getEnvelope().getMaxX() + distance, getFeature(i).getEnvelope().getMinY() - distance, getFeature(i).getEnvelope().getMaxY() + distance);
+
+                node->rangeQuery(rect, joinFeature);
+
+                for (size_t j = 0; j < joinFeature.size(); ++j)
+                    joinSet.push_back(std::make_pair(getFeature(i), joinFeature[j]));
+            }
+        }
+        else
+            for (size_t i = 0; i < 4; i++)
+                getChild(i)->spatialJoin_new(distance, node, joinSet);
     }
 
     void QuadTree::draw()
